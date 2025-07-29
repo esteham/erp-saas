@@ -1,0 +1,148 @@
+একটা Hyper Local Service Provider Network with Dynamic Pricing ওয়েব অ্যাপ্লিকেশনের জন্য React frontend এবং PHP backend দিয়ে একটি professional-level project structure নিচে দেওয়া হলো। এতে modular, scalable এবং secure architecture বজায় রাখা হয়েছে।
+✅ Project Overview:
+
+Features:
+
+    Location-based service providers (zone, area অনুযায়ী)
+
+    Real-time dynamic pricing based on demand/supply, time, or availability
+
+    User login/registration, request service
+
+    Provider login/registration, accept/reject request
+
+    Admin panel to manage users, providers, pricing rules
+
+    Notifications, Ratings, Reviews
+
+🗂️ Full Folder Structure:
+
+hyperlocal-service-network/
+│
+├── backend/
+│   ├── api/
+│   │   ├── auth/
+│   │   │   ├── login.php
+│   │   │   ├── register.php
+│   │   │   └── logout.php
+│   │   ├── user/
+│   │   │   ├── request_service.php
+│   │   │   ├── get_services.php
+│   │   │   └── history.php
+│   │   ├── provider/
+│   │   │   ├── accept_request.php
+│   │   │   ├── availability.php
+│   │   │   └── earnings.php
+│   │   ├── admin/
+│   │   │   ├── users.php
+│   │   │   ├── providers.php
+│   │   │   ├── pricing_rules.php
+│   │   │   └── zones_areas.php
+│   │   └── dynamic_pricing/
+│   │       └── calculate_price.php
+│   │
+│   ├── assets/
+│   │   └── uploads/
+│   ├── classes/
+│   │   ├── DB.php
+│   │   ├── Auth.php
+│   │   ├── User.php
+│   │   ├── Provider.php
+│   │   ├── Admin.php
+│   │   └── Pricing.php
+│   ├── config/
+│   │   ├── init.php
+│   │   └── database.php
+│   └── .htaccess
+│
+├── frontend/
+│   ├── public/
+│   │   └── index.html
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── Auth/
+│   │   │   │   ├── LoginForm.jsx
+│   │   │   │   └── RegisterForm.jsx
+│   │   │   ├── User/
+│   │   │   │   ├── ServiceRequest.jsx
+│   │   │   │   ├── ServiceHistory.jsx
+│   │   │   │   └── DynamicPriceView.jsx
+│   │   │   ├── Provider/
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── AvailabilityForm.jsx
+│   │   │   │   └── Earnings.jsx
+│   │   │   └── Admin/
+│   │   │       ├── ManageUsers.jsx
+│   │   │       ├── ManageProviders.jsx
+│   │   │       ├── PricingControl.jsx
+│   │   │       └── ZoneAreaManager.jsx
+│   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── UserDashboard.jsx
+│   │   │   ├── ProviderDashboard.jsx
+│   │   │   └── AdminDashboard.jsx
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   └── auth.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   └── .env
+│
+├── database/
+│   └── schema.sql
+│
+├── .gitignore
+├── package.json
+├── composer.json
+├── README.md
+
+🔧 Technologies Used:
+
+    Frontend: React (with Vite), React Router, Axios, Context API
+
+    Backend: PHP (OOP), PDO, REST API structure
+
+    Database: MySQL
+
+    Others: Bootstrap, JWT/Session-based Auth, .env config
+
+📌 Dynamic Pricing Logic:
+
+calculate_price.php এর মাধ্যমে:
+
+    সময় অনুযায়ী price multiplier
+
+    demand-supply রেশিও
+
+    special zones pricing
+
+    provider availability check
+
+📊 Database Tables (Core):
+
+    users (id, name, email, password, role)
+
+    providers (id, name, skills, zone, availability)
+
+    services (id, user_id, provider_id, status, base_price, final_price, timestamp)
+
+    pricing_rules (id, zone_id, multiplier, time_slot, special_condition)
+
+    zones and areas
+
+    ratings_reviews
+
+    notifications
+
+🔐 Security & Best Practices:
+
+    Passwords hashed using password_hash()
+
+    SQL with prepared statements (PDO)
+
+    Role-based access control
+
+    Input validation on both frontend & backend
