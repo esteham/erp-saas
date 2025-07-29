@@ -126,5 +126,5 @@ final_price = base_price * zone_multiplier * time_multiplier * demand_factor
 This project is licensed under the MIT License.
 👨‍💻 Author
 
-Developed by [Your Name]
-For any queries, email: you@example.com
+Developed by Esteham H. Zihad Ansari
+For any queries, email: spider@xetroot.com
