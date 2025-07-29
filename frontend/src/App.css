@@ -1,23 +1,54 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Base Styles */
+:root {
+  --dark-bg: #1e1e1e;
+  --primary-accent: #646cff;
+  --primary-accent-hover: #535bf2;
+  --secondary-accent: #61dafb;
+  --text-primary: rgba(255, 255, 255, 0.87);
+  --text-secondary: #888;
+  --transition-base: 300ms ease;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
 }
 
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--dark-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+               Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Logo Styles */
 .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  transition: filter var(--transition-base);
+  user-select: none;
 }
 
+.logo:hover {
+  filter: drop-shadow(0 0 2em color-mix(in srgb, var(--primary-accent) 70%, transparent));
+  transform: scale(1.05);
+  transition: filter var(--transition-base), transform 200ms ease;
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em color-mix(in srgb, var(--secondary-accent) 70%, transparent));
+}
+
+/* Animations */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -27,16 +58,91 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }
 
-.card {
-  padding: 2em;
+/* Reduced Motion Considerations */
+@media (prefers-reduced-motion: no-preference) {
+  .logo-spin {
+    animation: logo-spin infinite 20s linear;
+  }
+  
+  .logo:hover {
+    animation: logo-pulse 2s infinite;
+  }
 }
 
+/* Card Styles */
+.card {
+  padding: 2em;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-base);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Typography */
 .read-the-docs {
-  color: #888;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  letter-spacing: 0.5px;
+  text-align: center;
+  margin-top: 2em;
+}
+
+/* Layout Utilities */
+.flex-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .logo {
+    height: 4em;
+    padding: 1em;
+  }
+  
+  .card {
+    padding: 1.5em;
+    width: 90%;
+  }
+}
+
+/* Dark/Light Mode Support */
+@media (prefers-color-scheme: light) {
+  :root {
+    --dark-bg: #f5f5f5;
+    --text-primary: #213547;
+    --text-secondary: #666;
+  }
+  
+  .card {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .card:hover {
+    border-color: rgba(0, 0, 0, 0.2);
+  }
 }
