@@ -22,7 +22,7 @@ const DashboardContent = ({ setShowEmployeeModal, setShowGroupModal }) => {
                 className="me-3 mb-2 d-flex align-items-center"
                 onClick={() => setShowEmployeeModal(true)}
               >
-                <PersonPlusFill className="me-2" /> Register Employee
+                <PersonPlusFill className="me-2" /> Register Worker
               </Button>
               <Button
                 variant="success"

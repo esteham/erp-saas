@@ -1,7 +1,7 @@
 import React from "react";
 import { Table, Button, Spinner } from "react-bootstrap";
 
-const DepartmentsContent = ({
+const CategoryContent = ({
   departments,
   loading,
   setShowCreateModal,
@@ -67,4 +67,4 @@ const DepartmentsContent = ({
   );
 };
 
-export default DepartmentsContent;
+export default CategoryContent;

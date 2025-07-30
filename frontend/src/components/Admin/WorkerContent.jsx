@@ -13,7 +13,7 @@ import { PersonPlusFill } from "react-bootstrap-icons";
 import axios from "axios";
 import * as XLSX from "xlsx";
 
-const EmployeesContent = ({ setShowEmployeeModal }) => {
+const WorkerContent = ({ setShowEmployeeModal }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -340,4 +340,4 @@ const EmployeesContent = ({ setShowEmployeeModal }) => {
   );
 };
 
-export default EmployeesContent;
+export default WorkerContent;

@@ -20,28 +20,37 @@ import {
 
 const WorkerRegistrationModal = ({ show, handleClose }) => {
   const [step, setStep] = useState(1);
-  const [departments, setDepartments] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  // Form validation schemas for each step
+  // Validation schemas per step
   const stepSchemas = [
     Yup.object().shape({
       first_name: Yup.string().required("First name is required"),
       last_name: Yup.string().required("Last name is required"),
       username: Yup.string().required("Username is required"),
-      department_id: Yup.string().required("Department is required"),
+      category_id: Yup.string()
+        .required("Category is required")
+        .matches(/^\d+$/, "Invalid category"),
     }),
     Yup.object().shape({
       phone: Yup.string().required("Phone is required"),
       email: Yup.string().email("Invalid email").required("Email is required"),
       address: Yup.string().required("Address is required"),
+      zone_id: Yup.string()
+        .required("Zone is required")
+        .matches(/^\d+$/, "Invalid zone"),
+      area_id: Yup.string()
+        .required("Area is required")
+        .matches(/^\d+$/, "Invalid area"),
     }),
     Yup.object().shape({
       emergency_name: Yup.string(),
       emergency_phone: Yup.string(),
       emergency_relation: Yup.string(),
+      skills: Yup.string().required("Skills are required"),
     }),
     Yup.object().shape({
       certificate: Yup.mixed(),
@@ -56,8 +65,11 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
       email: "",
       phone: "",
       username: "",
-      department_id: "",
+      category_id: "",
+      zone_id: "",
+      area_id: "",
       address: "",
+      skills: "",
       emergency_name: "",
       emergency_phone: "",
       emergency_relation: "",
@@ -76,12 +88,32 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
 
       try {
         const data = new FormData();
-        for (let key in values) {
-          data.append(key, values[key]);
+
+        // Append all fields except files
+        data.append("first_name", values.first_name);
+        data.append("last_name", values.last_name);
+        data.append("email", values.email);
+        data.append("phone", values.phone);
+        data.append("username", values.username);
+        data.append("category_id", values.category_id);
+        data.append("zone_id", values.zone_id);
+        data.append("area_id", values.area_id);
+        data.append("address", values.address);
+        data.append("skills", values.skills);
+        data.append("emergency_name", values.emergency_name);
+        data.append("emergency_phone", values.emergency_phone);
+        data.append("emergency_relation", values.emergency_relation);
+
+        // Append files if any
+        if (values.certificate) {
+          data.append("certificate", values.certificate);
+        }
+        if (values.experience) {
+          data.append("experience", values.experience);
         }
 
         const res = await fetch(
-          `${BASE_URL}backend/api/employees/reg_employee.php`,
+          `${BASE_URL}backend/api/auth/register.php`,
           {
             method: "POST",
             credentials: "include",
@@ -107,27 +139,28 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
     },
   });
 
+  // Fetch categories for dropdown
   useEffect(() => {
     if (show) {
-      const fetchDepartments = async () => {
+      const fetchCategories = async () => {
         try {
           const res = await fetch(
-            `${BASE_URL}backend/api/department/fetctDepartment.php`,
+            `${BASE_URL}backend/api/categories/fetchCategory.php`,
             {
               credentials: "include",
             }
           );
           const result = await res.json();
           if (result.success) {
-            setDepartments(result.departments);
+            setCategories(result.categories);
           } else {
-            throw new Error(result.message || "Failed to fetch departments");
+            throw new Error(result.message || "Failed to fetch categories");
           }
         } catch (err) {
-          console.error("Department load failed:", err.message);
+          console.error("Category load failed:", err.message);
         }
       };
-      fetchDepartments();
+      fetchCategories();
     }
   }, [show]);
 
@@ -150,7 +183,7 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
       centered
     >
       <Modal.Header closeButton className="border-0 pb-0">
-        <Modal.Title className="fw-bold">Register New Employee</Modal.Title>
+        <Modal.Title className="fw-bold">Register New Worker</Modal.Title>
       </Modal.Header>
       <Modal.Body className="pt-1">
         <div className="mb-4">
@@ -250,27 +283,29 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="d-flex align-items-center">
-                    <FiUsers className="me-2" /> Department
+                    <FiUsers className="me-2" /> Category
                   </Form.Label>
                   <Form.Select
-                    name="department_id"
-                    value={formik.values.department_id}
+                    name="category_id"
+                    value={formik.values.category_id}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     isInvalid={
-                      formik.touched.department_id &&
-                      formik.errors.department_id
+                      formik.touched.category_id && formik.errors.category_id
                     }
                   >
-                    <option value="">Select Department</option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
+                    {!Array.isArray(categories) || categories.length === 0 ? (
+                        <option disabled>Loading categories...</option>
+                      ) : (
+                        categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))
+                      )}
                   </Form.Select>
                   <Form.Control.Feedback type="invalid">
-                    {formik.errors.department_id}
+                    {formik.errors.category_id}
                   </Form.Control.Feedback>
                 </Form.Group>
               </div>
@@ -317,6 +352,43 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
                   </Form.Control.Feedback>
                 </Form.Group>
               </div>
+
+              <div className="col-md-6">
+                <Form.Group>
+                  <Form.Label>Zone ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="zone_id"
+                    placeholder="Zone ID"
+                    value={formik.values.zone_id}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    isInvalid={formik.touched.zone_id && formik.errors.zone_id}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {formik.errors.zone_id}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+
+              <div className="col-md-6">
+                <Form.Group>
+                  <Form.Label>Area ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="area_id"
+                    placeholder="Area ID"
+                    value={formik.values.area_id}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    isInvalid={formik.touched.area_id && formik.errors.area_id}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {formik.errors.area_id}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+
               <div className="col-12">
                 <Form.Group>
                   <Form.Label className="d-flex align-items-center">
@@ -342,6 +414,23 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
 
           {step === 3 && (
             <div className="row g-3">
+              <div className="col-md-6">
+                <Form.Group>
+                  <Form.Label>Skills</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="skills"
+                    placeholder="e.g. Farmer, Carpenter"
+                    value={formik.values.skills}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    isInvalid={formik.touched.skills && formik.errors.skills}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {formik.errors.skills}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label>Emergency Contact Name</Form.Label>
@@ -386,13 +475,13 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="d-flex align-items-center">
-                    <FiUpload className="me-2" /> Certificate (PDF)
+                    <FiUpload className="me-2" /> Certificate (PDF/JPG/PNG)
                   </Form.Label>
                   <Form.Control
                     type="file"
                     name="certificate"
                     onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.jpg,.jpeg,.png"
                   />
                   {formik.values.certificate && (
                     <div className="mt-2 small text-muted">
@@ -404,13 +493,13 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="d-flex align-items-center">
-                    <FiUpload className="me-2" /> Experience (PDF)
+                    <FiUpload className="me-2" /> Experience (PDF/JPG/PNG)
                   </Form.Label>
                   <Form.Control
                     type="file"
                     name="experience"
                     onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.jpg,.jpeg,.png"
                   />
                   {formik.values.experience && (
                     <div className="mt-2 small text-muted">

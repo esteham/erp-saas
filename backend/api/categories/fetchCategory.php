@@ -6,16 +6,16 @@ if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 
     exit;
 }
 
-require_once '../../classes/class_admin.php';
+require_once '../../classes/class_functions.php';
 
 $admin = new Admin();
 $pdo = $admin->getPDO();
 
 try {
-    $departments = $admin->getAllDepartments();
+    $categories = $admin->getAllCategories();
     echo json_encode([
             'success' => true, 
-            'departments' => $departments
+            'categories' => $categories
         ]);
 } catch (Exception $e) {
     echo json_encode([

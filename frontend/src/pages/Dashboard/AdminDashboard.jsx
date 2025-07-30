@@ -217,7 +217,7 @@
 //     );
 //   };
 
-//   const EmployeesContent = () => (
+//   const WorkerContent = () => (
 //     <div>
 //       <div className="d-flex justify-content-between align-items-center mb-4">
 //         <h2>Employee Management</h2>
@@ -315,7 +315,7 @@
 //         {/* Main Content */}
 //         <Col md={9} lg={10} className="main-content p-4">
 //           {activeTab === "dashboard" && <DashboardContent />}
-//           {activeTab === "employees" && <EmployeesContent />}
+//           {activeTab === "employees" && <WorkerContent />}
 //           {activeTab === "groups" && <GroupsContent />}
 //           {activeTab === "payroll" && <PayrollContent />}
 //           {activeTab === "settings" && <SettingsContent />}

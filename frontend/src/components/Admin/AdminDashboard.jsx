@@ -3,10 +3,10 @@ import { Container, Row, Col } from "react-bootstrap";
 import axios from "axios";
 import Sidebar from "./Sidebar";
 import DashboardContent from "./DashboardContent";
-import EmployeesContent from "./EmployeesContent";
+import WorkerContent from "./WorkerContent";
 import GroupsContent from "./GroupsContent";
 import SettingsContent from "./SettingsContent";
-import DepartmentsContent from "./DepartmentsContent";
+import CategoryContent from "./CategoryContent";
 import TaskContext from "./TaskContext";
 import WorkerRegistrationModal from "../../pages/Workers/WorkerRegistrationModal";
 import GroupCreateModal from "../../pages/Groups/GroupCreateModal";
@@ -148,7 +148,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "employees" && (
-            <EmployeesContent setShowEmployeeModal={setShowEmployeeModal} />
+            <WorkerContent setShowEmployeeModal={setShowEmployeeModal} />
           )}
 
           {activeTab === "groups" && (
@@ -163,7 +163,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "departments" && (
-            <DepartmentsContent
+            <CategoryContent
               departments={departments}
               loading={loadingDepartments}
               setShowCreateModal={setShowDeptModal}
