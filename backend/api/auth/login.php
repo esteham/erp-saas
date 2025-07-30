@@ -18,7 +18,7 @@ if(empty($username) || empty($password))
 	exit;
 }
 
-require_once '../../classes/Admin.php';
+require_once '../../classes/class_functions.php';
 
 $admin = new Admin();
 
@@ -29,7 +29,6 @@ if($result['success'])
 	$_SESSION['user'] = [
 
 		'id' => $result['data']['id'],
-		'employee_id' => $result['data']['employee_id'],
 		'role' => $result['data']['role']
 	];
 

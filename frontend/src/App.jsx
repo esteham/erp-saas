@@ -1,34 +1,112 @@
-// frontend/src/App.jsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Header from "./components/common/Header";
-// import Login from "./components/Auth/LoginForm";
-// import Register from "./components/Auth/RegisterForm";
-// import Services from "./components/common/Services";
-// import Contact from "./components/common/Contact";
-import About from "./components/common/About";
-
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 import "./index.css";
-import "./App.css";
+import Home from "./pages/Home";
+import Header from "./components/common/Header";
+import About from "./components/common/About";
+import Contact from "./components/common/Contact";
+import LoginFetch from "./pages/LoginFetch";
+import AgentDashboard from "./components/Agents/AgentDashboard";
+import AdminDashboard from "./components/Admin/AdminDashboard";
+import WorkerDashboard from "./components/Workers/WorkerDashboard";
+
+// ProtectedRoute Component with loading check
+const ProtectedRoute = ({ children, roles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/LoginFetch" replace />;
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Role-based dynamic redirect
+const RoleDashboard = () => {
+  const { user } = useAuth();
+
+  switch (user?.role) {
+    case "admin":
+      return <AdminDashboard />;
+    case "hr":
+      return <AgentDashboard />;
+    case "employee":
+      return <WorkerDashboard />;
+    default:
+      return <Navigate to="/" replace />;
+  }
+};
 
 function App() {
   return (
-    <>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Header />
+
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          {/* <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} /> */}
-          {/* <Route path="/services" element={<Services />} />
-          <Route path="/contact" element={<Contact />} /> */}
-          <Route path="/about" element={<About />} />
-          {/* Add other routes here */}
+          <Route path="/About" element={<About />} />
+          <Route path="/Contact" element={<Contact />} />
+          <Route path="/LoginFetch" element={<LoginFetch />} />
+
+          {/* Protected Routes */}
+
+          <Route
+            path="/AgentDashboard"
+            element={
+              <ProtectedRoute roles={["hr"]}>
+                <AgentDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/AdminDashboard"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/WorkerDashboard"
+            element={
+              <ProtectedRoute roles={["employee"]}>
+                <WorkerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dynamic Dashboard Redirect */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </BrowserRouter>
-    </>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

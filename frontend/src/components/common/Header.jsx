@@ -19,7 +19,7 @@ const Header = () => {
             <Nav.Link as={Link} to="/contact">About</Nav.Link>
           </Nav>
           <Nav className="gap-2">
-            <Link to="/login">
+            <Link to="/LoginFetch">
               <Button variant="outline-light" size="sm">Login</Button>
             </Link>
             <Link to="/register">

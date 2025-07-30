@@ -1,83 +1,143 @@
--- Users Table
-CREATE TABLE users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(100) NOT NULL,
-        first_name VARCHAR(100) NOT NULL,
-        last_name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role ENUM('user', 'provider', 'admin') DEFAULT 'user',
-        document VARCHAR(255) DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+CREATE TABLE divisions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
 
--- Providers Table
-CREATE TABLE providers (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        skills TEXT,
-        zone_id INT,
-        is_available BOOLEAN DEFAULT TRUE,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (zone_id) REFERENCES zones(id)
-        );
+CREATE TABLE districts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    division_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE CASCADE
+);
 
--- Zones Table
+CREATE TABLE upazilas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    district_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (district_id) REFERENCES districts(id) ON DELETE CASCADE
+);
+
 CREATE TABLE zones (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100)
-        );
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    upazila_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (upazila_id) REFERENCES upazilas(id) ON DELETE CASCADE
+);
 
--- Areas Table
 CREATE TABLE areas (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        zone_id INT,
-        name VARCHAR(100),
-        FOREIGN KEY (zone_id) REFERENCES zones(id)
-        );
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    zone_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE CASCADE
+);
 
--- Services Table
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'agent', 'worker', 'user') NOT NULL DEFAULT 'user',
+    status ENUM('active','inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE workers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    zone_id INT,
+    area_id INT,
+    category_id INT DEFAULT NULL,
+    phone VARCHAR(20),
+    image VARCHAR(255),
+    join_date DATE NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    address TEXT,
+    skills TEXT,
+    emergency_name VARCHAR(100),
+    emergency_phone VARCHAR(20),
+    emergency_relation VARCHAR(50),
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL,
+    FOREIGN KEY (area_id) REFERENCES areas(id) ON DELETE SET NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE agents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    assigned_zone_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_zone_id) REFERENCES zones(id) ON DELETE SET NULL
+);
+
 CREATE TABLE services (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        provider_id INT,
-        area_id INT,
-        service_type VARCHAR(100),
-        base_price DECIMAL(10,2),
-        final_price DECIMAL(10,2),
-        status ENUM('pending', 'accepted', 'completed', 'cancelled') DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (provider_id) REFERENCES providers(id),
-        FOREIGN KEY (area_id) REFERENCES areas(id)
-        );
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    worker_id INT NOT NULL,
+    area_id INT NOT NULL,
+    service_type VARCHAR(100) NOT NULL,
+    base_price DECIMAL(10,2) CHECK (base_price >= 0),
+    final_price DECIMAL(10,2) CHECK (final_price >= 0),
+    status ENUM('pending', 'accepted', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE,
+    FOREIGN KEY (area_id) REFERENCES areas(id) ON DELETE CASCADE
+);
 
--- Pricing Rules Table
-CREATE TABLE pricing_rules (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        zone_id INT,
-        time_start TIME,
-        time_end TIME,
-        multiplier DECIMAL(3,2),
-        FOREIGN KEY (zone_id) REFERENCES zones(id)
-        );
+CREATE TABLE tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agent_id INT NOT NULL,
+    worker_id INT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    status ENUM('assigned', 'in_progress', 'completed') DEFAULT 'assigned',
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+);
 
--- Reviews Table
+CREATE TABLE task_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    worker_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+);
+
 CREATE TABLE reviews (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        service_id INT,
-        rating INT CHECK (rating >= 1 AND rating <= 5),
-        comment TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (service_id) REFERENCES services(id)
-        );
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+);
 
--- Notifications Table
 CREATE TABLE notifications (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        message TEXT,
-        is_read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        );
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE pricing_rules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    zone_id INT NOT NULL,
+    time_start TIME NOT NULL,
+    time_end TIME NOT NULL,
+    multiplier DECIMAL(3,2) CHECK (multiplier >= 0),
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE CASCADE
+);
