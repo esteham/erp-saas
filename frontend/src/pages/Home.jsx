@@ -69,7 +69,7 @@ const Home = () => {
                 transition={{ duration: 0.8 }}
               >
                 <img
-                  src="/assets/service-network.png"
+                  src="/src/assets/premium_photo-1661932816149-291a447e3022.jpeg"
                   alt="Service Illustration"
                   className="img-fluid rounded-3 shadow-lg"
                   style={{ border: '1px solid rgba(255,255,255,0.1)' }}
@@ -89,7 +89,7 @@ const Home = () => {
             variants={fadeIn}
             viewport={{ once: true }}
           >
-            <h2 className="text-center mb-5 display-5 fw-semibold">
+            <h2 className="text-center text-info mb-5 display-5 fw-semibold">
               Why Choose <span className="text-primary">Our Platform?</span>
             </h2>
           </motion.div>
