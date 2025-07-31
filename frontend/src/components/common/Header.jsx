@@ -2,6 +2,7 @@ import React from "react";
 import { Navbar, Nav, Container, Button } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import "../../assets/css/header.css"
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -29,7 +30,7 @@ const Header = () => {
   };
 
   return (
-    <Navbar bg="primary" variant="dark" expand="lg" sticky="top" style={{ padding: "20px" }}>
+    <Navbar className="header" variant="dark" expand="lg" sticky="top" style={{ padding: "25px" }}>
       <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold">
         HyperLocal Services
