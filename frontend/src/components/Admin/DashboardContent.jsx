@@ -8,7 +8,7 @@ import {
   PlusCircleFill,
 } from "react-bootstrap-icons";
 
-const DashboardContent = ({ setShowEmployeeModal, setShowGroupModal }) => {
+const DashboardContent = ({ setShowWorkerModal, setShowGroupModal }) => {
   return (
     <div>
       <h2 className="mb-4">Admin Dashboard</h2>
@@ -20,7 +20,7 @@ const DashboardContent = ({ setShowEmployeeModal, setShowGroupModal }) => {
               <Button
                 variant="primary"
                 className="me-3 mb-2 d-flex align-items-center"
-                onClick={() => setShowEmployeeModal(true)}
+                onClick={() => setShowWorkerModal(true)}
               >
                 <PersonPlusFill className="me-2" /> Register Worker
               </Button>

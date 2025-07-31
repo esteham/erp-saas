@@ -4,7 +4,7 @@ import axios from "axios";
 import Sidebar from "./Sidebar";
 import DashboardContent from "./DashboardContent";
 import WorkerContent from "./WorkerContent";
-import GroupsContent from "./AreaContent";
+import GroupsContent from "./GroupsContent";
 import SettingsContent from "./SettingsContent";
 import CategoryContent from "./CategoryContent";
 import TaskContext from "./TaskContext";
@@ -13,7 +13,7 @@ import GroupCreateModal from "../../pages/Groups/GroupCreateModal";
 import GroupEditModal from "../../pages/Groups/GroupEditModal";
 import CategoryCreateModal from "../../pages/Categories/CategoryCreateModal";
 import CategoryEditModal from "../../pages/Categories/CategoryEditModal";
-import AreaContent from "./AreaContent";
+// import AreaContent from "./AreaContent";
 import "../../assets/css/AdminDashboard.css";
 
 import ErrorBoundary from "../ErrorBoundary";

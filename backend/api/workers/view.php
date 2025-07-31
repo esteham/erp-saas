@@ -1,6 +1,6 @@
 <?php
 require_once '../config/init.php';
-require_once '../../classes/class_admin.php';
+require_once '../../classes/class_functions.php';
 
 // Ensure user is authenticated (optional, but recommended)
 if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'hr'])) {
@@ -13,17 +13,17 @@ if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 
 
 // Initialize DB connection
 $admin = new Admin();
-$data = $admin->getAllEmployees();
+$data = $admin->getAllWorkers();
 
 if (!empty($data)) {
     echo json_encode([
         'success'   => true,
-        'employees' => $data
+        'woker' => $data
     ]);
 } else {
     echo json_encode([
         'success' => false,
-        'message' => 'No employees found.'
+        'message' => 'No workers found.'
     ]);
 }
 ?>

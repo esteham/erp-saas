@@ -13,7 +13,7 @@ import { PersonPlusFill } from "react-bootstrap-icons";
 import axios from "axios";
 import * as XLSX from "xlsx";
 
-const WorkerContent = ({ setShowEmployeeModal }) => {
+const WorkerContent = ({ setShowWorkerModal }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,7 @@ const WorkerContent = ({ setShowEmployeeModal }) => {
         <h2>Employee Management</h2>
         <Button
           variant="primary"
-          onClick={() => setShowEmployeeModal(true)}
+          onClick={() => setShowWorkerModal(true)}
           className="d-flex align-items-center"
         >
           <PersonPlusFill className="me-2" /> Add Employee
