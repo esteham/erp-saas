@@ -17,11 +17,6 @@
   z-index: 1000;
 }
 
-.fw-bold{
-  font-size: 30px;
-  color: var(--text-color);
-}
-
 .nav {
   display: flex;
   justify-content: space-between;
