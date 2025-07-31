@@ -11,7 +11,7 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/LoginFetch");
+    navigate("/");
   };
 
   const getDashboardPath = () => {
@@ -32,7 +32,7 @@ const Header = () => {
     <Navbar bg="primary" variant="dark" expand="lg" sticky="top" style={{ padding: "20px" }}>
       <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold">
-          🛠️ HyperLocal Services
+        HyperLocal Services
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="main-navbar" />
