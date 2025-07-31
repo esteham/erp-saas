@@ -2,27 +2,27 @@ import React from "react";
 import { Table, Button, Spinner } from "react-bootstrap";
 
 const CategoryContent = ({
-  departments,
+  categories,
   loading,
   setShowCreateModal,
   setEditModalShow,
-  setSelectedDept,
+  setSelectedcat,
   handleDelete,
 }) => {
-  const handleEditClick = (dept) => {
-    setSelectedDept(dept);
+  const handleEditClick = (cat) => {
+    setSelectedcat(cat);
     setEditModalShow(true);
   };
 
   return (
     <div>
-      <h4>Department Management</h4>
+      <h4>Category Management</h4>
       <Button
         variant="primary"
         className="mb-3"
         onClick={() => setShowCreateModal(true)}
       >
-        + Add Department
+        + Add Categoty
       </Button>
 
       {loading ? (
@@ -37,23 +37,23 @@ const CategoryContent = ({
             </tr>
           </thead>
           <tbody>
-            {departments.map((dept) => (
-              <tr key={dept.id}>
-                <td>{dept.id}</td>
-                <td>{dept.name}</td>
+            {categories.map((cat) => (
+              <tr key={cat.id}>
+                <td>{cat.id}</td>
+                <td>{cat.name}</td>
                 <td>
                   <Button
                     size="sm"
                     variant="warning"
                     className="me-2"
-                    onClick={() => handleEditClick(dept)}
+                    onClick={() => handleEditClick(cat)}
                   >
                     Edit
                   </Button>
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => handleDelete(dept.id)}
+                    onClick={() => handleDelete(cat.id)}
                   >
                     Delete
                   </Button>

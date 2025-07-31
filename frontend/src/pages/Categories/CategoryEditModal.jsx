@@ -1,26 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Alert } from "react-bootstrap";
 import axios from "axios";
 
-const DepartmentCreateModal = ({ show, handleClose, refreshDepartments }) => {
+const CategoryEditModal = ({
+  show,
+  handleClose,
+  categoryData,
+  refreshCategories,
+}) => {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-
   const BASE_URL = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    if (categoryData && categoryData.name) {
+      setName(categoryData.name);
+    } else {
+      setName("");
+    }
+  }, [categoryData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     if (name.trim() === "") {
-      setError("Department name is required.");
+      setError("Category name is required.");
       return;
     }
 
     try {
       const res = await axios.post(
-        `${BASE_URL}backend/api/department/create.php`,
-        { name },
+        `${BASE_URL}backend/api/categories/edit.php`,
+        { id: categoryData.id, name },
         {
           headers: { "Content-Type": "application/json" },
           withCredentials: true,
@@ -28,15 +40,14 @@ const DepartmentCreateModal = ({ show, handleClose, refreshDepartments }) => {
       );
 
       if (res.data.success) {
-        refreshDepartments();
-        setName("");
+        refreshCategories();
         handleClose();
       } else {
-        setError(res.data.message);
+        setError(res.data.message || "Failed to update category.");
       }
     } catch (err) {
-      console.error("Department creation error:", err);
-      setError("Failed to create department.");
+      console.error("Update error:", err);
+      setError("Failed to update category. Please try again.");
     }
   };
 
@@ -44,17 +55,17 @@ const DepartmentCreateModal = ({ show, handleClose, refreshDepartments }) => {
     <Modal show={show} onHide={handleClose}>
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>Add Department</Modal.Title>
+          <Modal.Title>Edit Category</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
-          <Form.Group>
-            <Form.Label>Department Name</Form.Label>
+          <Form.Group controlId="categoryName">
+            <Form.Label>Category Name</Form.Label>
             <Form.Control
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter department name"
+              placeholder="Enter category name"
             />
           </Form.Group>
         </Modal.Body>
@@ -63,7 +74,7 @@ const DepartmentCreateModal = ({ show, handleClose, refreshDepartments }) => {
             Cancel
           </Button>
           <Button type="submit" variant="primary">
-            Save
+            Update
           </Button>
         </Modal.Footer>
       </Form>
@@ -71,4 +82,4 @@ const DepartmentCreateModal = ({ show, handleClose, refreshDepartments }) => {
   );
 };
 
-export default DepartmentCreateModal;
+export default CategoryEditModal;

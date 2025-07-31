@@ -387,11 +387,11 @@ class Admin
         return $stmt->execute([$name, $id]);
     }
 
-    public function deleteCategory($id)
+    public function deleteCategory($categoryID)
     {
         $sql = "DELETE FROM categories WHERE id = ?";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$id]);
+        return $stmt->execute([$categoryID]);
     }
 
     /* ==============

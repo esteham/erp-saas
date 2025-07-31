@@ -1,60 +1,55 @@
 <?php
 require_once '../config/init.php';
+require_once '../../classes/class_functions.php';
 
-require_once '../../classes/class_admin.php';
 $admin = new Admin();
 
-if(!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin')
-{
-	echo json_encode([
-            'success' => false, 
-            'message' => 'Unauthorized'
-        ]);
-	exit;
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unauthorized'
+    ]);
+    exit;
 }
 
-if($_SERVER['REQUEST_METHOD'] !== 'POST')
-{
-	echo json_encode([
-            'success' => false, 
-            'message' => 'Invalid Request'
-        ]);
-	exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid Request'
+    ]);
+    exit;
 }
 
 $data = json_decode(file_get_contents("php://input"), true);
-$department_name = trim($data['name'] ?? '');
+$id = $data['id'] ?? 0;
+$name = trim($data['name'] ?? '');
 
-if(!$department_name === '')
-{
-	echo json_encode([
-            'success' => false, 
-            'message' => 'Nmae required'
-        ]);
-	exit;
+if (empty($id) || $name === '') {
+    echo json_encode([
+        'success' => false,
+        'message' => 'ID and name are required'
+    ]);
+    exit;
 }
 
-try 
-{
-	$pdo = $admin->getPdo();
-	$pdo->beginTransaction();
+try {
+    $success = $admin->updateCategory($id, $name);
 
-	$stmt = $pdo->prepare("UPDATE departments SET name = ? WHERE id = ?");
-	$stmt->execute([$department_name, $data['id']]);
-
-	$pdo->commit();
-
-	echo json_encode([
-            'success' => true, 
-            'message' => 'Department Updated Successfully']);
-
-	} 
-catch (Exception $e) 
-{
-	$pdo->rollBack();
-	echo json_encode([
-            'success' => false, 
-            'message' => 'Failed to Update Group', 
-            'error' => $e->getMessage()
+    if ($success) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Category updated successfully'
         ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to update category'
+        ]);
+    }
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error occurred',
+        'error' => $e->getMessage()
+    ]);
 }

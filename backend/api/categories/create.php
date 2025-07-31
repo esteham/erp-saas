@@ -26,26 +26,27 @@ if($name === '')
 {
 	echo json_encode([
             'success' => false, 
-            'message' => 'Department name required'
+            'message' => 'Category name required'
         ]);
 	exit;
 }
 
-require_once '../../classes/class_admin.php';
+require_once '../../classes/class_functions.php';
 
 $admin = new Admin();
 $pdo = $admin->getPDO();
 
-try 
+try
 {
-	$stmt = $pdo->prepare("INSERT INTO departments (name) VALUES (?)");
-	$stmt->execute([$name]);
+    $pdo ->beginTransaction();
 
-	echo json_encode([
-            'success' => true, 
-            'message' => 'New Department Created'
+    $name = $admin->createCategory($name);
+    $pdo ->commit();
+
+    echo json_encode([
+            'success'=> true,
+            'message'=> 'Category created succesfully'
         ]);
-
 } 
 catch (Exception $e) 
 {

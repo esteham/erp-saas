@@ -4,22 +4,22 @@ import axios from "axios";
 import Sidebar from "./Sidebar";
 import DashboardContent from "./DashboardContent";
 import WorkerContent from "./WorkerContent";
-import GroupsContent from "./GroupsContent";
+import GroupsContent from "./AreaContent";
 import SettingsContent from "./SettingsContent";
 import CategoryContent from "./CategoryContent";
 import TaskContext from "./TaskContext";
 import WorkerRegistrationModal from "../../pages/Workers/WorkerRegistrationModal";
 import GroupCreateModal from "../../pages/Groups/GroupCreateModal";
 import GroupEditModal from "../../pages/Groups/GroupEditModal";
-import DepartmentCreateModal from "../../pages/Departments/DepartmentCreateModal";
-import DepartmentEditModal from "../../pages/Departments/DepartmentEditModal";
-// import TaskAssignment from "../../pages/Tasks/TaskAssignment";
+import CategoryCreateModal from "../../pages/Categories/CategoryCreateModal";
+import CategoryEditModal from "../../pages/Categories/CategoryEditModal";
+import AreaContent from "./AreaContent";
 import "../../assets/css/AdminDashboard.css";
 
 import ErrorBoundary from "../ErrorBoundary";
 
 const AdminDashboard = () => {
-  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [editModalShow, setEditModalShow] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -29,11 +29,11 @@ const AdminDashboard = () => {
   const [groups, setGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
 
-  const [departments, setDepartments] = useState([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(true);
-  const [showDeptModal, setShowDeptModal] = useState(false);
-  const [deptEditModal, setDeptEditModal] = useState(false);
-  const [selectedDept, setSelectedDept] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryEditModal, setCategoryEditModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -55,29 +55,29 @@ const AdminDashboard = () => {
       });
   };
 
-  const fetchDepartments = () => {
-    setLoadingDepartments(true);
+  const fetchCategories = () => {
+    setLoadingCategories(true);
     axios
-      .get(`${BASE_URL}backend/api/department/fetctDepartment.php`, {
+      .get(`${BASE_URL}backend/api/categories/fetchCategory.php`, {
         withCredentials: true,
       })
       .then((res) => {
         if (res.data.success) {
-          setDepartments(res.data.departments);
+          setCategories(res.data.categories);
         } else {
-          console.error("Failed to fetch departments:", res.data.message);
+          console.error("Failed to fetch categories:", res.data.message);
         }
-        setLoadingDepartments(false);
+        setLoadingCategories(false);
       })
       .catch((err) => {
-        console.error("Error fetching departments:", err);
-        setLoadingDepartments(false);
+        console.error("Error fetching categories:", err);
+        setLoadingCategories(false);
       });
   };
 
   useEffect(() => {
     fetchGroups();
-    fetchDepartments();
+    fetchCategories();
   }, []);
 
   const handleDeleteGroup = async (id) => {
@@ -106,24 +106,25 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteDepartment = async (id) => {
-    if (!window.confirm("Are you sure to delete this department?")) return;
+  //Category delete final
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm("Are you sure to delete this category?")) return;
 
     try {
       const res = await axios.post(
-        `${BASE_URL}backend/api/department/delete.php`,
-        {
-          id,
-        },
+        `${BASE_URL}backend/api/categories/delete.php`,
+        { id },
         {
           headers: { "Content-Type": "application/json" },
           withCredentials: true,
         }
       );
 
+      console.log("Delete Response:", res.data);
+
       if (res.data.success) {
-        const updated = departments.filter((dept) => dept.id !== id);
-        setDepartments(updated);
+        const updated = categories.filter((cat) => cat.id !== id);
+        setCategories(updated);
       } else {
         alert(res.data.message);
       }
@@ -131,6 +132,7 @@ const AdminDashboard = () => {
       console.error("Delete error:", err);
     }
   };
+
 
   return (
     <Container fluid className="admin-dashboard">
@@ -142,13 +144,13 @@ const AdminDashboard = () => {
         <Col md={9} lg={10} className="main-content p-4">
           {activeTab === "dashboard" && (
             <DashboardContent
-              setShowEmployeeModal={setShowEmployeeModal}
+              setShowWorkerModal={setShowWorkerModal}
               setShowGroupModal={setShowGroupModal}
             />
           )}
 
-          {activeTab === "employees" && (
-            <WorkerContent setShowEmployeeModal={setShowEmployeeModal} />
+          {activeTab === "workers" && (
+            <WorkerContent setShowWorkerModal={setShowWorkerModal} />
           )}
 
           {activeTab === "groups" && (
@@ -162,24 +164,24 @@ const AdminDashboard = () => {
             />
           )}
 
-          {activeTab === "departments" && (
+          {activeTab === "category" && (
             <CategoryContent
-              departments={departments}
-              loading={loadingDepartments}
-              setShowCreateModal={setShowDeptModal}
-              setEditModalShow={setDeptEditModal}
-              setSelectedDept={setSelectedDept}
-              handleDelete={handleDeleteDepartment}
+              categories={categories}
+              loading={loadingCategories}
+              setShowCreateModal={setShowCategoryModal}
+              setEditModalShow={setCategoryEditModal}
+              setSelectedcat={setSelectedCategory} 
+              handleDelete={handleDeleteCategory}
             />
           )}
 
-          {activeTab === "payroll" && <PayrollContent />}
+          {activeTab === "area" && <AreaContent />}
           {activeTab === "tasks" && <TaskContext />}
           {activeTab === "settings" && <SettingsContent />}
 
           <WorkerRegistrationModal
-            show={showEmployeeModal}
-            handleClose={() => setShowEmployeeModal(false)}
+            show={showWorkerModal}
+            handleClose={() => setShowWorkerModal(false)}
           />
           <GroupCreateModal
             show={showGroupModal}
@@ -193,17 +195,17 @@ const AdminDashboard = () => {
               refreshGroups={fetchGroups}
             />
           )}
-          <DepartmentCreateModal
-            show={showDeptModal}
-            handleClose={() => setShowDeptModal(false)}
-            refreshDepartments={fetchDepartments}
+          <CategoryCreateModal
+            show={showCategoryModal}
+            handleClose={() => setShowCategoryModal(false)}
+            refreshCategories={fetchCategories}
           />
-          {selectedDept && (
-            <DepartmentEditModal
-              show={deptEditModal}
-              handleClose={() => setDeptEditModal(false)}
-              departmentData={selectedDept}
-              refreshDepartments={fetchDepartments}
+          {selectedCategory && (
+            <CategoryEditModal
+              show={categoryEditModal}
+              handleClose={() => setCategoryEditModal(false)}
+              categoryData={selectedCategory}
+              refreshCategories={fetchCategories}
             />
           )}
         </Col>
