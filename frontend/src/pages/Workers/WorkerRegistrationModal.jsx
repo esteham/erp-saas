@@ -54,7 +54,6 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
     }),
     Yup.object().shape({
       certificate: Yup.mixed(),
-      experience: Yup.mixed(),
     }),
   ];
 
@@ -107,9 +106,6 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
         // Append files if any
         if (values.certificate) {
           data.append("certificate", values.certificate);
-        }
-        if (values.experience) {
-          data.append("experience", values.experience);
         }
 
         const res = await fetch(
@@ -475,7 +471,7 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="d-flex align-items-center">
-                    <FiUpload className="me-2" /> Certificate (PDF/JPG/PNG)
+                    <FiUpload className="me-2" /> Documents (PDF/JPG/PNG)
                   </Form.Label>
                   <Form.Control
                     type="file"
@@ -486,24 +482,6 @@ const WorkerRegistrationModal = ({ show, handleClose }) => {
                   {formik.values.certificate && (
                     <div className="mt-2 small text-muted">
                       Selected: {formik.values.certificate.name}
-                    </div>
-                  )}
-                </Form.Group>
-              </div>
-              <div className="col-md-6">
-                <Form.Group>
-                  <Form.Label className="d-flex align-items-center">
-                    <FiUpload className="me-2" /> Experience (PDF/JPG/PNG)
-                  </Form.Label>
-                  <Form.Control
-                    type="file"
-                    name="experience"
-                    onChange={handleFileChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                  />
-                  {formik.values.experience && (
-                    <div className="mt-2 small text-muted">
-                      Selected: {formik.values.experience.name}
                     </div>
                   )}
                 </Form.Group>
