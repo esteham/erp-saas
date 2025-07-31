@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, Card, Alert, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { FiLogIn, FiUser, FiLock, FiAlertCircle } from "react-icons/fi";
 import * as Yup from "yup";
 import { useFormik } from "formik";
@@ -49,9 +49,9 @@ const LoginFetch = () => {
           navigate(
             data.role === "admin"
               ? "/AdminDashboard"
-              : data.role === "hr"
+              : data.role === "agent"
               ? "/AgentDashboard"
-              : data.role === "employee"
+              : data.role === "worker"
               ? "/WorkerDashboard"
               : "/"
           );

@@ -18,9 +18,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
 
   const navItems = [
     { id: "dashboard", icon: HouseFill, label: "Dashboard" },
-    { id: "employees", icon: PeopleFill, label: "Employees" },
-    { id: "groups", icon: FolderFill, label: "Groups" },
-    { id: "departments", icon: Building, label: "Departments" },
+    { id: "worker", icon: PeopleFill, label: "Worker" },
+    { id: "category", icon: FolderFill, label: "Category" },
+    { id: "area", icon: Building, label: "Area" },
     { id: "tasks", icon: FolderFill, label: "Tasks" },
     { id: "settings", icon: GearFill, label: "Settings" },
   ];

@@ -32,7 +32,11 @@ if($result['success'])
 		'role' => $result['data']['role']
 	];
 
-	echo json_encode(['success'=> true, 'message'=>'Login Successfull', 'role' => $result['data']['role']]);
+	echo json_encode([
+			'success'=> true, 
+			'message'=>'Login Successfull', 
+			'role' => $result['data']['role']
+		]);
 }
 
 else

@@ -5,11 +5,12 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import "./index.css";
-import Home from "./pages/Home";
+import Home from "./components/common/Home/Home";
 import Header from "./components/common/Header";
 import About from "./components/common/About";
 import Contact from "./components/common/Contact";
-import LoginFetch from "./pages/LoginFetch";
+import Footer from "./components/common/Footer";
+import LoginFetch from "./components/Auth/LoginFetch";
 import AgentDashboard from "./components/Agents/AgentDashboard";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import WorkerDashboard from "./components/Workers/WorkerDashboard";
@@ -105,6 +106,7 @@ function App() {
             }
           />
         </Routes>
+        <Footer />
       </AuthProvider>
     </BrowserRouter>
   );
