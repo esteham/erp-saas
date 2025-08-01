@@ -320,49 +320,6 @@ class Admin
     }
 
     /* ==============
-    Location Management
-    ================*/
-    public function getAllDivisions()
-    {
-        $sql = "SELECT * FROM divisions ORDER BY name ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getDistrictsByDivision($divisionId)
-    {
-        $sql = "SELECT * FROM districts WHERE division_id = ? ORDER BY name ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$divisionId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getUpazilasByDistrict($districtId)
-    {
-        $sql = "SELECT * FROM upazilas WHERE district_id = ? ORDER BY name ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$districtId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getZonesByUpazila($upazilaId)
-    {
-        $sql = "SELECT * FROM zones WHERE upazila_id = ? ORDER BY name ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$upazilaId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getAreasByZone($zoneId)
-    {
-        $sql = "SELECT * FROM areas WHERE zone_id = ? ORDER BY name ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$zoneId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /* ==============
     Category Management
     ================*/
     public function getAllCategories()
