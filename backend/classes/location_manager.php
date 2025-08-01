@@ -24,9 +24,16 @@ class LocationManager
         }
 
     }
-    
+
     // ---------- Division ----------
     public function createDivision($name) {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM divisions WHERE name = ?");
+        $stmt->execute([$name]);
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        }
         $stmt = $this->pdo->prepare("INSERT INTO divisions (name) VALUES (?)");
         return $stmt->execute([$name]);
     }
