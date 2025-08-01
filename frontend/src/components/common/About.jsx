@@ -8,27 +8,27 @@ import {
   LightBulbIcon,
   WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { motion as MotionDiv } from 'framer-motion';
 
 const About = () => {
   const features = [
     {
-      icon: <CheckBadgeIcon className="h-8 w-8 text-primary" />,
+      icon: <CheckBadgeIcon className="h-3 w-3 text-primary" />,
       title: "Certified Professionals",
       description: "All our technicians are licensed, certified, and background-checked."
     },
     {
-      icon: <UserGroupIcon className="h-8 w-8 text-primary" />,
+      icon: <UserGroupIcon className="h-3 w-3 text-primary" />,
       title: "Customer-Focused",
       description: "We prioritize your satisfaction with transparent pricing and clear communication."
     },
     {
-      icon: <ShieldCheckIcon className="h-8 w-8 text-primary" />,
+      icon: <ShieldCheckIcon className="h-3 w-3 text-primary" />,
       title: "Quality Guarantee",
       description: "We stand behind our work with comprehensive warranties on all services."
     },
     {
-      icon: <TrophyIcon className="h-8 w-8 text-primary" />,
+      icon: <TrophyIcon className="h-3 w-3 text-primary" />,
       title: "Award-Winning Service",
       description: "Recognized as the best local service provider for 3 consecutive years."
     }
@@ -37,7 +37,7 @@ const About = () => {
   const faqs = [
     {
       question: "How quickly can you respond to service requests?",
-      answer: "We typically respond within 2 hours for emergency services and schedule non-emergency services within 24-48 hours."
+      answer: "We typically respond within 2 hours for emergency services and schedule non-emergency services within 24-43 hours."
     },
     {
       question: "Do you offer emergency services?",
@@ -54,7 +54,7 @@ const About = () => {
   ];
 
   return (
-    <motion.div
+    <MotionDiv.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -77,7 +77,7 @@ const About = () => {
           </Col>
           <Col lg={6}>
             <img 
-              src="/images/service-team.jpg" 
+              src="/src/assets/creative-labor-day-banner-composition_23-2149503647.avif" 
               alt="Our team at work" 
               className="img-fluid rounded shadow"
             />
@@ -106,7 +106,7 @@ const About = () => {
           <Col lg={6} className="order-lg-2">
             <div className="position-relative">
               <img 
-                src="/images/about-story.jpg" 
+                src="/src/assets/maxresdefault.jpg" 
                 alt="Our story" 
                 className="img-fluid rounded shadow"
               />
@@ -148,15 +148,40 @@ const About = () => {
           <h2 className="text-center mb-5">Meet Our Team</h2>
           <Row className="g-4">
             {[
-              { name: "John Smith", role: "Founder & CEO", bio: "Master Technician with 25 years experience", img: "/images/team1.jpg" },
-              { name: "Sarah Johnson", role: "Operations Manager", bio: "10 years in customer service management", img: "/images/team2.jpg" },
-              { name: "Mike Davis", role: "Lead Technician", bio: "Specializes in HVAC systems", img: "/images/team3.jpg" },
-              { name: "Emily Wilson", role: "Customer Relations", bio: "Ensures 100% customer satisfaction", img: "/images/team4.jpg" }
+              {
+                name: "John Smith",
+                role: "Founder & CEO",
+                bio: "Master Technician with 25 years experience",
+                img: "/src/assets/20210527_142533.jpg"
+              },
+              {
+                name: "Sarah Johnson",
+                role: "Operations Manager",
+                bio: "10 years in customer service management",
+                img: "/src/assets/IMG-20210128-WA0147.jpg"
+              },
+              {
+                name: "Mike Davis",
+                role: "Lead Technician",
+                bio: "Specializes in HVAC systems",
+                img: "/src/assets/IMG_20200131_143230.jpg"
+              },
+              {
+                name: "Emily Wilson",
+                role: "Customer Relations",
+                bio: "Ensures 100% customer satisfaction",
+                img: "/src/assets/received_363411758360649.jpeg"
+              }
             ].map((member, index) => (
               <Col key={index} md={6} lg={3}>
-                <Card className="border-0 shadow-sm h-100">
-                  <Card.Img variant="top" src={member.img} />
-                  <Card.Body className="text-center">
+                <Card className="border-0 shadow-sm h-100 text-center">
+                  <Card.Body>
+                    <img
+                      src={member.img}
+                      alt={member.name}
+                      className="rounded-circle mb-3"
+                      style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                    />
                     <h5 className="mb-1">{member.name}</h5>
                     <p className="text-primary mb-2">{member.role}</p>
                     <p className="text-muted small">{member.bio}</p>
@@ -181,18 +206,25 @@ const About = () => {
         </div>
 
         {/* Call to Action */}
-        <Card className="bg-primary text-white shadow border-0 mt-5">
-          <Card.Body className="p-5 text-center">
-            <LightBulbIcon className="h-10 w-10 mb-3 mx-auto" />
-            <h2 className="mb-3">Ready to Experience Exceptional Service?</h2>
-            <p className="mb-4 lead">
-              Contact us today for a free estimate or to schedule your service appointment.
-            </p>
-            <Button variant="light" size="lg">Get Started Now</Button>
-          </Card.Body>
-        </Card>
+        <Container className="mt-5">
+  <Row className="justify-content-center">
+    <Col md={3} lg={6}>
+      <Card className="bg-primary text-white shadow border-0">
+        <Card.Body className="p-5 text-center">
+          <LightBulbIcon className="h-10 w-10 mb-3 mx-auto" />
+          <h2 className="mb-3">Ready to Experience Exceptional Service?</h2>
+          <p className="mb-4 lead">
+            Contact us today for a free estimate or to schedule your service appointment.
+          </p>
+          <Button variant="light" size="lg">Get Started Now</Button>
+        </Card.Body>
+      </Card>
+    </Col>
+  </Row>
+</Container>
+
       </Container>
-    </motion.div>
+    </MotionDiv.div>
   );
 };
 
