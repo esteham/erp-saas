@@ -10,14 +10,18 @@ import {
   CheckCircleIcon,
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { motion as MotionDiv } from 'framer-motion';
 
 const Services = () => {
+  const iconStyle = { width: "20px", height: "20px", color: "#0d6efd" };
+  const smallIconStyle = { width: "18px", height: "18px", color: "green", marginRight: "10px" };
+  const processIconStyle = { width: "30px", height: "30px", color: "#0d6efd" };
+
   const services = [
     {
       id: 'plumbing',
       title: 'Plumbing Services',
-      icon: <WrenchIcon className="h-3 w-3 text-primary" />,
+      icon: <WrenchIcon style={iconStyle} />,
       description: 'Comprehensive plumbing solutions for homes and businesses',
       features: [
         '24/7 emergency plumbing',
@@ -31,7 +35,7 @@ const Services = () => {
     {
       id: 'electrical',
       title: 'Electrical Services',
-      icon: <BoltIcon className="h-3 w-3 text-primary" />,
+      icon: <BoltIcon style={iconStyle} />,
       description: 'Safe and reliable electrical work by certified professionals',
       features: [
         'Electrical panel upgrades',
@@ -45,7 +49,7 @@ const Services = () => {
     {
       id: 'hvac',
       title: 'HVAC Services',
-      icon: <FireIcon className="h-3 w-3 text-primary" />,
+      icon: <FireIcon style={iconStyle} />,
       description: 'Heating, ventilation and air conditioning solutions',
       features: [
         'AC installation & repair',
@@ -59,7 +63,7 @@ const Services = () => {
     {
       id: 'handyman',
       title: 'Handyman Services',
-      icon: <SunIcon className="h-3 w-3 text-primary" />,
+      icon: <SunIcon style={iconStyle} />,
       description: 'All-around home maintenance and repairs',
       features: [
         'Drywall repair',
@@ -73,7 +77,7 @@ const Services = () => {
     {
       id: 'cleaning',
       title: 'Professional Cleaning',
-      icon: <SparklesIcon className="h-3 w-3 text-primary" />,
+      icon: <SparklesIcon style={iconStyle} />,
       description: 'Deep cleaning services for residential and commercial',
       features: [
         'Move-in/move-out cleaning',
@@ -87,7 +91,7 @@ const Services = () => {
     {
       id: 'maintenance',
       title: 'Preventive Maintenance',
-      icon: <ShieldCheckIcon className="h-3 w-3 text-primary" />,
+      icon: <ShieldCheckIcon style={iconStyle} />,
       description: 'Keep your systems running smoothly year-round',
       features: [
         'Seasonal HVAC checkups',
@@ -143,7 +147,7 @@ const Services = () => {
   ];
 
   return (
-    <motion.div
+    <MotionDiv.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -164,7 +168,7 @@ const Services = () => {
           </Col>
           <Col lg={6}>
             <img 
-              src="/images/services-hero.jpg" 
+              src="/src/assets/many-different-professions-collage-happy-600nw-2453357543.webp" 
               alt="Our services" 
               className="img-fluid rounded shadow"
             />
@@ -179,20 +183,28 @@ const Services = () => {
           </p>
           
           <Tabs
-            defaultActiveKey="all"
-            id="services-tabs"
-            className="mb-4 justify-content-center"
-            fill
-          >
-            <Tab eventKey="all" title="All Services" />
-            <Tab eventKey="popular" title="Most Popular" />
-            <Tab eventKey="emergency" title="Emergency Services" />
-          </Tabs>
-
+              defaultActiveKey="all"
+              id="services-tabs"
+              className="mb-4 justify-content-center"
+              fill
+            >
+                <Tab
+                  eventKey="all"
+                  title={<span style={{ color: "black" }}>All Services</span>}
+                />
+                <Tab
+                  eventKey="popular"
+                  title={<span style={{ color: "black" }}>Most Popular</span>}
+                />
+                <Tab
+                  eventKey="emergency"
+                  title={<span style={{ color: "black" }}>Emergency Services</span>}
+                />
+            </Tabs>
           <Row className="g-4">
             {services.map((service, index) => (
               <Col key={index} md={6} lg={4}>
-                <motion.div
+                <MotionDiv.div
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
                 >
@@ -212,7 +224,7 @@ const Services = () => {
                         {service.features.map((feature, i) => (
                           <ListGroup.Item key={i} className="border-0 px-0 py-1">
                             <div className="d-flex align-items-center">
-                              <CheckCircleIcon className="h-5 w-5 text-success me-2" />
+                              <CheckCircleIcon style={smallIconStyle} />
                               <span>{feature}</span>
                             </div>
                           </ListGroup.Item>
@@ -221,7 +233,7 @@ const Services = () => {
                       <Button variant="outline-primary" className="w-30">Learn More</Button>
                     </Card.Body>
                   </Card>
-                </motion.div>
+                </MotionDiv.div>
               </Col>
             ))}
           </Row>
@@ -235,28 +247,24 @@ const Services = () => {
           </Col>
           {[
             {
-              step: "1",
               title: "Schedule Your Service",
               description: "Book online or call us to schedule a convenient time",
-              icon: <ClipboardDocumentCheckIcon className="h-8 w-8 text-primary" />
+              icon: <ClipboardDocumentCheckIcon style={processIconStyle} />
             },
             {
-              step: "2",
               title: "Expert Technician Arrives",
               description: "Our certified professional will arrive on time",
-              icon: <WrenchIcon className="h-8 w-8 text-primary" />
+              icon: <WrenchIcon style={processIconStyle} />
             },
             {
-              step: "3",
               title: "Diagnosis & Estimate",
               description: "We assess the issue and provide transparent pricing",
-              icon: <ShieldCheckIcon className="h-8 w-8 text-primary" />
+              icon: <ShieldCheckIcon style={processIconStyle} />
             },
             {
-              step: "4",
               title: "Service Completed",
               description: "We complete the job to your satisfaction",
-              icon: <CheckCircleIcon className="h-8 w-8 text-primary" />
+              icon: <CheckCircleIcon style={processIconStyle} />
             }
           ].map((step, index) => (
             <Col key={index} md={6} lg={3}>
@@ -281,7 +289,7 @@ const Services = () => {
           <Row className="g-4">
             {servicePackages.map((pkg, index) => (
               <Col key={index} md={6} lg={4}>
-                <motion.div
+                <MotionDiv.div
                   whileHover={{ scale: pkg.recommended ? 1.03 : 1.01 }}
                   transition={{ duration: 0.2 }}
                 >
@@ -299,7 +307,7 @@ const Services = () => {
                         {pkg.features.map((feature, i) => (
                           <ListGroup.Item key={i} className="border-0 px-0 py-2">
                             <div className="d-flex align-items-center">
-                              <CheckCircleIcon className="h-5 w-5 text-success me-2" />
+                              <CheckCircleIcon style={smallIconStyle} />
                               <span>{feature}</span>
                             </div>
                           </ListGroup.Item>
@@ -313,7 +321,7 @@ const Services = () => {
                       </Button>
                     </Card.Body>
                   </Card>
-                </motion.div>
+                </MotionDiv.div>
               </Col>
             ))}
           </Row>
@@ -337,7 +345,7 @@ const Services = () => {
           </Card.Body>
         </Card>
       </Container>
-    </motion.div>
+    </MotionDiv.div>
   );
 };
 
