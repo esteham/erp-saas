@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -55,61 +55,69 @@ const RoleDashboard = () => {
 };
 
 function App() {
+  const location = useLocation();
+  const hiddenFooterRoutes = [
+    "/AdminDashboard",
+    "/AgentDashboard",
+    "/WorkerDashboard",
+    "/"
+  ];
+  const shouldShowFooter = !hiddenFooterRoutes.includes(location.pathname);
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Header />
+    <AuthProvider>
+      <Header />
 
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/About" element={<About />} />
-          <Route path="/Contact" element={<Contact />} />
-          <Route path="/LoginFetch" element={<LoginFetch />} />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/About" element={<About />} />
+        <Route path="/Contact" element={<Contact />} />
+        <Route path="/LoginFetch" element={<LoginFetch />} />
 
-          {/* Protected Routes */}
+        {/* Protected Routes */}
+        <Route
+          path="/AgentDashboard"
+          element={
+            <ProtectedRoute roles={["agent"]}>
+              <AgentDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/AgentDashboard"
-            element={
-              <ProtectedRoute roles={["hr"]}>
-                <AgentDashboard />
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/AdminDashboard"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/AdminDashboard"
-            element={
-              <ProtectedRoute roles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/WorkerDashboard"
+          element={
+            <ProtectedRoute roles={["worker"]}>
+              <WorkerDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/WorkerDashboard"
-            element={
-              <ProtectedRoute roles={["employee"]}>
-                <WorkerDashboard />
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <RoleDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
 
-          {/* Dynamic Dashboard Redirect */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-        <Footer />
-      </AuthProvider>
-    </BrowserRouter>
+      {/* Footer শুধু নির্দিষ্ট route গুলো ছাড়া show করবে */}
+      {shouldShowFooter && <Footer />}
+    </AuthProvider>
   );
 }
+
 
 export default App;
