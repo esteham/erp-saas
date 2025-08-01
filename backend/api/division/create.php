@@ -13,11 +13,10 @@ if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 
     exit;
 }
 
-$location = new LocationManager();
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (isset($data['name'])) {
-    $success = $location->createDivision($data['name']);
+    $success = $admin->createDivision($data['name']);
 
     if ($success) {
         echo json_encode([

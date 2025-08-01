@@ -13,9 +13,7 @@ if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 
     exit;
 }
 
-$location = new LocationManager();
-
-$data = $location->getDivisions();
+$data = $admin->getDivisions();
 
 if ($data === false || $data === null) {
     echo json_encode([
