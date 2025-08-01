@@ -28,7 +28,7 @@ const Contact = () => {
         alert('Thank you for your message! We will get back to you soon.');
         resetForm();
       } catch (error) {
-        alert('There was an error submitting your message. Please try again later.' +error);
+        alert('There was an error submitting your message. Please try again later.' + error);
       } finally {
         setSubmitting(false);
       }
@@ -55,7 +55,7 @@ const Contact = () => {
       <Container className="py-5">
         <h1 className="text-center mb-5">Contact Us</h1>
         
-        <Row className="g-4">
+        <Row className="g-4 mb-5">
           <Col lg={6}>
             <Card className="h-100 shadow-sm">
               <Card.Body>
@@ -150,13 +150,16 @@ const Contact = () => {
                     </Form.Control.Feedback>
                   </Form.Group>
                   
-                  <Button 
-                    variant="primary" 
-                    type="submit"
-                    disabled={formik.isSubmitting}
-                  >
-                    {formik.isSubmitting ? 'Sending...' : 'Send Message'}
-                  </Button>
+                  <div className="d-grid">
+                    <Button 
+                      variant="primary" 
+                      type="submit"
+                      size="lg"
+                      disabled={formik.isSubmitting}
+                    >
+                      {formik.isSubmitting ? 'Sending...' : 'Send Message'}
+                    </Button>
+                  </div>
                 </Form>
               </Card.Body>
             </Card>
@@ -226,6 +229,115 @@ const Contact = () => {
                     <li className="col-md-6">Suburb B</li>
                     <li className="col-md-6">County Area</li>
                   </ul>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Map Section */}
+        <Row className="mb-5">
+          {/* Google Map */}
+          <Col md={12} lg={6} className="mb-4 mb-lg-0">
+            <Card className="shadow-sm border-0">
+              <Card.Body className="p-0">
+                <div className="ratio ratio-16x9">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.215373510562!2d-73.9878449242395!3d40.74844097138979!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b3117469%3A0xd134e199a405a163!2sEmpire%20State%20Building!5e0!3m2!1sen!2sus!4v1712345678901!5m2!1sen!2sus"
+                    style={{ border: 0, width: "100%", height: "100%" }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Our Location"
+                  ></iframe>
+                </div>
+              </Card.Body>
+              <Card.Footer className="bg-light px-4 py-3">
+                <div className="d-flex justify-content-between align-items-center flex-wrap">
+                  <div className="d-flex align-items-center text-muted mb-2 mb-md-0">
+                    <MapPinIcon className="me-2" style={{ width: "20px", height: "20px", color: "#0d6efd" }} />
+                    <span>123 Service Street, Your City, ST 12345</span>
+                  </div>
+                  <Button variant="outline-primary" size="sm">
+                    Get Directions
+                  </Button>
+                </div>
+              </Card.Footer>
+            </Card>
+          </Col>
+
+          {/* Modern Info Card */}
+          <Col md={12} lg={6}>
+            <Card className="shadow-sm border-0 h-100">
+              <Card.Body className="p-4 d-flex flex-column justify-content-center">
+                <h5 className="mb-3">Need Help? Contact Us</h5>
+                <p className="text-muted mb-4">
+                  Our team is available 24/7 to support you with emergency services and quick response.
+                </p>
+
+                <div className="d-flex align-items-center mb-3 text-dark">
+                  <PhoneIcon className="me-3" style={{ width: "20px", height: "20px", color: "#198754" }} />
+                  <strong>+1 (555) 123-4567</strong>
+                </div>
+
+                <div className="d-flex align-items-center mb-3 text-dark">
+                  <EnvelopeIcon className="me-3" style={{ width: "20px", height: "20px", color: "#0d6efd" }} />
+                  <strong>support@example.com</strong>
+                </div>
+
+                <div className="mt-4">
+                  <Button variant="primary" className="me-2">
+                    Live Chat
+                  </Button>
+                  <Button variant="outline-secondary">FAQs</Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+        {/* FAQ Section */}
+        <Row>
+          <Col>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <h2 className="mb-4">Frequently Asked Questions</h2>
+                <div className="accordion" id="faqAccordion">
+                  <div className="accordion-item">
+                    <h3 className="accordion-header" id="headingOne">
+                      <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                        What are your business hours?
+                      </button>
+                    </h3>
+                    <div id="collapseOne" className="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        Our regular business hours are Monday to Friday from 8:00 AM to 6:00 PM, and Saturdays from 9:00 AM to 2:00 PM. We're closed on Sundays.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="accordion-item">
+                    <h3 className="accordion-header" id="headingTwo">
+                      <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                        How quickly can you respond to service requests?
+                      </button>
+                    </h3>
+                    <div id="collapseTwo" className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        For emergency services, we typically respond within 2 hours. For standard service requests, we aim to respond within 24 hours during business days.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="accordion-item">
+                    <h3 className="accordion-header" id="headingThree">
+                      <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                        What payment methods do you accept?
+                      </button>
+                    </h3>
+                    <div id="collapseThree" className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        We accept all major credit cards, cash, checks, and bank transfers. We also offer financing options for larger projects.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Card.Body>
             </Card>
