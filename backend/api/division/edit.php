@@ -1,6 +1,5 @@
 <?php
 require_once '../config/init.php';
-require_once '../../classes/location_manager.php';
 require_once '../../classes/class_functions.php';
 
 $admin = new Admin();
