@@ -103,8 +103,8 @@ class Admin
     {
         $sql = "SELECT w.*, u.username, u.email, u.status as user_status, 
                 c.name as category_name, z.name as zone_name, a.name as area_name
-                FROM workers w
-                LEFT JOIN users u ON w.user_id = u.id
+                FROM users u
+                LEFT JOIN  workers w ON u.worker_id = w.id
                 LEFT JOIN categories c ON w.category_id = c.id
                 LEFT JOIN zones z ON w.zone_id = z.id
                 LEFT JOIN areas a ON w.area_id = a.id

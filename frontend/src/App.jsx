@@ -9,6 +9,7 @@ import Home from "./components/common/Home/Home";
 import Header from "./components/common/Header";
 import About from "./components/common/About";
 import Contact from "./components/common/Contact";
+import Services from "./components/common/Services"
 import Footer from "./components/common/Footer";
 import LoginFetch from "./components/Auth/LoginFetch";
 import AgentDashboard from "./components/Agents/AgentDashboard";
@@ -45,9 +46,9 @@ const RoleDashboard = () => {
   switch (user?.role) {
     case "admin":
       return <AdminDashboard />;
-    case "hr":
+    case "agent":
       return <AgentDashboard />;
-    case "employee":
+    case "worker":
       return <WorkerDashboard />;
     default:
       return <Navigate to="/" replace />;
@@ -60,7 +61,6 @@ function App() {
     "/AdminDashboard",
     "/AgentDashboard",
     "/WorkerDashboard",
-    "/"
   ];
   const shouldShowFooter = !hiddenFooterRoutes.includes(location.pathname);
 
@@ -73,6 +73,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/About" element={<About />} />
         <Route path="/Contact" element={<Contact />} />
+        <Route path="/Services" element={<Services />} />
         <Route path="/LoginFetch" element={<LoginFetch />} />
 
         {/* Protected Routes */}
@@ -112,8 +113,6 @@ function App() {
           }
         />
       </Routes>
-
-      {/* Footer শুধু নির্দিষ্ট route গুলো ছাড়া show করবে */}
       {shouldShowFooter && <Footer />}
     </AuthProvider>
   );

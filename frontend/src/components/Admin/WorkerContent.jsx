@@ -33,7 +33,7 @@ const WorkerContent = ({ setShowWorkerModal }) => {
   }, []);
 
   const fetchCategories = () => {
-    axios.get(`${BASE_URL}backend/api/categories/fetchCategory.php`, {
+    axios.get(`${BASE_URL}backend/api/categories/fetch_category.php`, {
       withCredentials: true,
     })
     .then((res) => {
@@ -45,7 +45,7 @@ const WorkerContent = ({ setShowWorkerModal }) => {
 
   const fetchWorkers = () => {
     setLoading(true);
-    axios.get(`${BASE_URL}backend/api/workers/view.php`, {
+    axios.get(`${BASE_URL}backend/api/workers/fetch_workers.php`, {
       withCredentials: true,
     })
     .then((res) => {
