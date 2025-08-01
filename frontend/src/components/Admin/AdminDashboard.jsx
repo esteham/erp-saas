@@ -11,6 +11,7 @@ import MessagesContent from "./MessagesContent";
 import NotificationsContent from "./NotificationsContent";
 import SettingsContent from "./SettingsContent";
 import CategoryCreateModal from "../../pages/Categories/CategoryCreateModal";
+import WorkerRegistrationModal from "../../pages/Workers/WorkerRegistrationModal";
 import "../../assets/css/AdminDashboard.css";
 import ErrorBoundary from "../ErrorBoundary";
 import axios from "axios";
@@ -18,10 +19,14 @@ import axios from "axios";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Category related states
+  // Modal States
+  const [showWorkerModal, setShowWorkerModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false); // For Category Create Modal
+
+  // Category Related States
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false); // Not used now
   const [editModalShow, setEditModalShow] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
 
@@ -30,7 +35,9 @@ const AdminDashboard = () => {
   const refreshCategories = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BASE_URL}backend/api/categories/fetch_category.php`);
+      const res = await axios.get(`${BASE_URL}backend/api/categories/fetch_category.php`,{
+        withCredentials: true
+      });
       if (res.data.success) {
         setCategories(res.data.categories || []);
       } else {
@@ -73,7 +80,12 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardContent />;
+        return (
+          <DashboardContent
+            setShowWorkerModal={setShowWorkerModal}
+            setShowGroupModal={setShowGroupModal}
+          />
+        );
       case "worker":
         return <WorkerContent />;
       case "category":
@@ -87,12 +99,6 @@ const AdminDashboard = () => {
               setSelectedcat={setSelectedCat}
               handleDelete={handleDeleteCategory}
             />
-            <CategoryCreateModal
-              show={showCreateModal}
-              handleClose={() => setShowCreateModal(false)}
-              refreshCategories={refreshCategories}
-            />
-            {/* আপনি চাইলে EditModal এখানেও বসাতে পারেন */}
           </>
         );
       case "division":
@@ -120,6 +126,19 @@ const AdminDashboard = () => {
           <ErrorBoundary>{renderContent()}</ErrorBoundary>
         </Col>
       </Row>
+
+      {/* Worker Registration Modal */}
+      <WorkerRegistrationModal
+        show={showWorkerModal}
+        handleClose={() => setShowWorkerModal(false)}
+      />
+
+      {/* Category Create Modal */}
+      <CategoryCreateModal
+        show={showGroupModal}
+        handleClose={() => setShowGroupModal(false)}
+        refreshCategories={refreshCategories}
+      />
     </Container>
   );
 };
