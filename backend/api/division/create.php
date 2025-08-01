@@ -8,9 +8,9 @@ $pdo = $admin->getPDO();
 
 if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'agent'])) {
     echo json_encode([
-            'success' => false, 
-            'message' => 'Unauthorized Access'
-        ]);
+        'success' => false, 
+        'message' => 'Unauthorized Access'
+    ]);
     exit;
 }
 
@@ -31,10 +31,7 @@ if (isset($data['name'])) {
             'message' => 'Division already exists or insertion failed'
         ]);
     }
-}
-
-else 
-{
+} else {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid input']);
 }

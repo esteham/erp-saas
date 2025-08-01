@@ -29,7 +29,7 @@ const DashboardContent = ({ setShowWorkerModal, setShowGroupModal }) => {
                 className="d-flex align-items-center"
                 onClick={() => setShowGroupModal(true)}
               >
-                <PlusCircleFill className="me-2" /> Create Group
+                <PlusCircleFill className="me-2" /> Create Category
               </Button>
             </Card.Body>
           </Card>

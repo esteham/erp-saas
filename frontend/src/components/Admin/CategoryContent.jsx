@@ -37,7 +37,7 @@ const CategoryContent = ({
             </tr>
           </thead>
           <tbody>
-            {categories.map((cat) => (
+            {(categories ?? []).map((cat) => (
               <tr key={cat.id}>
                 <td>{cat.id}</td>
                 <td>{cat.name}</td>

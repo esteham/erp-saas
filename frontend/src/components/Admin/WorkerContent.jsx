@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import * as XLSX from "xlsx";
 import {
   Button,
   Card,
@@ -10,329 +12,220 @@ import {
   Pagination,
 } from "react-bootstrap";
 import { PersonPlusFill } from "react-bootstrap-icons";
-import axios from "axios";
-import * as XLSX from "xlsx";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const WorkerContent = ({ setShowWorkerModal }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [detailsModalShow, setDetailsModalShow] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [departments, setDepartments] = useState([]);
-  const [selectedDept, setSelectedDept] = useState("");
-  const [deptEmployeeCount, setDeptEmployeeCount] = useState(null);
-
-  // Pagination
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categoryWorkerCount, setCategoryWorkerCount] = useState(null);
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  const BASE_URL = import.meta.env.VITE_API_URL;
+  const [itemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    fetchEmployees();
-    fetchDepartments();
+    fetchCategories();
+    fetchWorkers();
   }, []);
 
-  const fetchEmployees = () => {
+  const fetchCategories = () => {
+    axios.get(`${BASE_URL}backend/api/categories/fetchCategory.php`, {
+      withCredentials: true,
+    })
+    .then((res) => {
+      if (res.data.success) {
+        setCategories(res.data.categories);
+      }
+    });
+  };
+
+  const fetchWorkers = () => {
     setLoading(true);
-    axios
-      .get(`${BASE_URL}backend/api/employees/view.php`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setEmployees(res.data.employees);
-        } else {
-          alert("Failed to fetch employees.");
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    axios.get(`${BASE_URL}backend/api/workers/view.php`, {
+      withCredentials: true,
+    })
+    .then((res) => {
+      if (res.data.success) {
+        setWorkers(res.data.workers);
+      }
+      setLoading(false);
+    });
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure to delete this employee?")) return;
-
-    axios
-      .post(
-        `${BASE_URL}backend/api/employees/delete.php`,
-        { id },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      )
-      .then((res) => {
-        if (res.data.success) {
-          setEmployees((prev) => prev.filter((e) => e.id !== id));
-        } else {
-          alert(res.data.message);
-        }
-      });
-  };
-
-  const fetchDepartments = () => {
-    axios
-      .get(`${BASE_URL}backend/api/department/fetctDepartment.php`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setDepartments(res.data.departments);
-        }
-      });
-  };
-
-  // When a department is selected, fetch employees for that department
-  const handleDepartmentChange = (e) => {
-    const deptId = e.target.value;
-    setSelectedDept(deptId);
-    if (!deptId) {
-      setDeptEmployeeCount(null);
-      fetchEmployees();
+  const handleCategoryChange = (e) => {
+    const catId = e.target.value;
+    setSelectedCategory(catId);
+    if (!catId) {
+      setCategoryWorkerCount(null);
+      fetchWorkers();
       return;
     }
 
     setLoading(true);
     axios
-      .post(
-        `${BASE_URL}backend/api/employees/count_by_department.php`,
-        { department_id: deptId },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      )
+      .post(`${BASE_URL}backend/api/workers/count_by_category.php`, {
+        category_id: catId,
+      }, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      })
       .then((res) => {
         if (res.data.success) {
-          setEmployees(res.data.employees);
-          setDeptEmployeeCount(res.data.employees.length);
+          setWorkers(res.data.workers);
+          setCategoryWorkerCount(res.data.workers.length);
         } else {
-          setEmployees([]);
-          setDeptEmployeeCount(0);
+          setWorkers([]);
+          setCategoryWorkerCount(0);
         }
         setLoading(false);
       })
       .catch(() => {
-        setEmployees([]);
-        setDeptEmployeeCount(0);
+        setWorkers([]);
+        setCategoryWorkerCount(0);
         setLoading(false);
       });
   };
 
-  // search filter
-  const filteredEmployees = employees.filter(
-    (e) =>
-      e.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.id.toString().includes(searchTerm)
+  const handleDetails = (worker) => {
+    setSelectedWorker(worker);
+    setShowModal(true);
+  };
+
+  const filteredWorkers = workers.filter((emp) =>
+    emp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // pagination slicing only if department not selected
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentEmployees = selectedDept
-    ? filteredEmployees
-    : filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const currentWorkers = selectedCategory
+    ? filteredWorkers
+    : filteredWorkers.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Excel download function
+  const totalPages = Math.ceil(filteredWorkers.length / itemsPerPage);
+
   const downloadExcel = () => {
-    const deptName =
-      departments.find((d) => d.id == selectedDept)?.name || "Unknown";
+    const catName =
+      categories.find((d) => d.id == selectedCategory)?.name || "Unknown";
 
-    // Header + Sub-header
-    const rows = [
-      ["Employee List"],
-      [`Department: ${deptName}`],
-      [],
-      ["ID", "Name", "Email", "Phone Number"],
-      ...filteredEmployees.map((emp) => [
-        emp.id,
-        `${emp.first_name} ${emp.last_name}`,
-        emp.email,
-        emp.phone || "",
-      ]),
-    ];
+    const data = workers.map((emp) => ({
+      ID: emp.id,
+      Name: emp.name,
+      Email: emp.email,
+      Phone: emp.phone,
+      Category: emp.department_name,
+    }));
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-
-    // Auto width set
-    const colWidths = rows[3].map((_, colIndex) => {
-      const maxLen = rows.reduce((max, row) => {
-        const val = row[colIndex];
-        const len = val ? val.toString().length : 0;
-        return Math.max(max, len);
-      }, 0);
-      return { wch: maxLen + 2 };
-    });
-    ws["!cols"] = colWidths;
-
+    const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Employees");
-
-    XLSX.writeFile(wb, `Employees_${deptName.replace(/\s+/g, "_")}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Workers");
+    XLSX.writeFile(wb, `Workers_${catName.replace(/\s+/g, "_")}.xlsx`);
   };
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Employee Management</h2>
-        <Button
-          variant="primary"
-          onClick={() => setShowWorkerModal(true)}
-          className="d-flex align-items-center"
-        >
-          <PersonPlusFill className="me-2" /> Add Employee
-        </Button>
-      </div>
-      <div className="row mb-3">
-        <div className="col-md-6">
-          <Form.Group controlId="departmentSelect">
-            <Form.Label>Select Department</Form.Label>
-            <Form.Select value={selectedDept} onChange={handleDepartmentChange}>
-              <option value="">-- Select Department --</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-        </div>
-        <div className="col-md-6 d-flex align-items-end">
-          <InputGroup>
-            <Form.Control
-              placeholder="Search by name or ID"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </InputGroup>
-        </div>
-      </div>
+      <h4>Worker Management</h4>
+      <Button variant="success" onClick={() => setShowWorkerModal(true)}>
+        <PersonPlusFill /> Add Worker
+      </Button>
 
-      {selectedDept && (
+      <Form.Group controlId="categorySelect" className="my-3">
+        <Form.Label>Select Category</Form.Label>
+        <Form.Select value={selectedCategory} onChange={handleCategoryChange}>
+          <option value="">-- Select Category --</option>
+          {categories.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
+
+      {selectedCategory && (
         <div className="mb-3">
           <p>
-            <strong>Total Employees:</strong> {deptEmployeeCount ?? 0}
+            <strong>Total Workers:</strong> {categoryWorkerCount ?? 0}
           </p>
-          <Button
-            onClick={downloadExcel}
-            variant="success"
-            size="sm"
-            className="mb-3"
-          >
-            Download Excel
+          <Button variant="outline-primary" onClick={downloadExcel}>
+            Export Excel
           </Button>
-          {loading ? (
-            <Spinner animation="border" />
-          ) : (
-            // শুধু নামের list দেখানো হচ্ছে department select হলে
-            <ul>
-              {filteredEmployees.map((emp) => (
-                <li key={emp.id}>
-                  {emp.first_name} {emp.last_name} - {emp.email}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
-      {!selectedDept && (
-        <Card>
-          <Card.Body>
-            {loading ? (
-              <Spinner animation="border" />
-            ) : (
-              <>
-                <Table striped hover responsive>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentEmployees.map((e) => (
-                      <tr key={e.id}>
-                        <td>{e.id}</td>
-                        <td>
-                          {e.first_name} {e.last_name}
-                        </td>
-                        <td>{e.email}</td>
-                        <td>
-                          <Button
-                            size="sm"
-                            variant="info"
-                            className="me-2"
-                            onClick={() => {
-                              setSelectedEmployee(e);
-                              setDetailsModalShow(true);
-                            }}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => handleDelete(e.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
 
-                {/* Pagination */}
-                <Pagination>
-                  {[...Array(totalPages)].map((_, idx) => (
-                    <Pagination.Item
-                      key={idx}
-                      active={idx + 1 === currentPage}
-                      onClick={() => setCurrentPage(idx + 1)}
-                    >
-                      {idx + 1}
-                    </Pagination.Item>
-                  ))}
-                </Pagination>
-              </>
-            )}
-          </Card.Body>
-        </Card>
+      <InputGroup className="mb-3">
+        <Form.Control
+          placeholder="Search by name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </InputGroup>
+
+      {loading ? (
+        <Spinner animation="border" />
+      ) : (
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Category</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentWorkers.map((worker) => (
+              <tr key={worker.id}>
+                <td>{worker.id}</td>
+                <td>{worker.name}</td>
+                <td>{worker.email}</td>
+                <td>{worker.phone}</td>
+                <td>{worker.department_name}</td>
+                <td>
+                  <Button
+                    size="sm"
+                    variant="info"
+                    onClick={() => handleDetails(worker)}
+                  >
+                    Details
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       )}
 
-      {/* Details Modal */}
-      <Modal show={detailsModalShow} onHide={() => setDetailsModalShow(false)}>
+      {!selectedCategory && (
+        <Pagination>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Pagination.Item
+              key={page}
+              active={page === currentPage}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Pagination.Item>
+          ))}
+        </Pagination>
+      )}
+
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Employee Details</Modal.Title>
+          <Modal.Title>Worker Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedEmployee && (
-            <>
-              <p>
-                <strong>Name :</strong> {selectedEmployee.first_name}{" "}
-                {selectedEmployee.last_name}
-              </p>
-              <p>
-                <strong>Email :</strong> {selectedEmployee.email}
-              </p>
-              <p>
-                <strong>Phone :</strong> {selectedEmployee.phone}
-              </p>
-              <p>
-                <strong>Role :</strong> {selectedEmployee.user_role}
-              </p>
-              <p>
-                <strong>Department:</strong> {selectedEmployee.department_name}
-              </p>
-            </>
+          {selectedWorker && (
+            <div>
+              <p><strong>Name:</strong> {selectedWorker.name}</p>
+              <p><strong>Email:</strong> {selectedWorker.email}</p>
+              <p><strong>Phone:</strong> {selectedWorker.phone}</p>
+              <p><strong>Category:</strong> {selectedWorker.department_name}</p>
+            </div>
           )}
         </Modal.Body>
       </Modal>

@@ -7,7 +7,8 @@ header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json");
 
 session_start();
-// Handle preflight request
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+    http_response_code(200);
+    exit();
 }

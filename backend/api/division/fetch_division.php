@@ -8,13 +8,25 @@ $pdo = $admin->getPDO();
 
 if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'agent'])) {
     echo json_encode([
-            'success' => false, 
-            'message' => 'Unauthorized Access'
-        ]);
+        'success' => false,
+        'message' => 'Unauthorized Access'
+    ]);
     exit;
 }
 
 $location = new LocationManager();
 
 $data = $location->getDivisions();
-echo json_encode($data);
+
+if ($data === false || $data === null) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to fetch divisions'
+    ]);
+    exit;
+}
+
+echo json_encode([
+    'success' => true,
+    'data' => $data
+]);
