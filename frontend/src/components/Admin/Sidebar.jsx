@@ -32,13 +32,13 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
 
   const navItems = [
     { id: "dashboard", icon: HouseFill, label: "Dashboard", badge: 0 },
-    { id: "worker", icon: PeopleFill, label: "Worker", badge: 2 },
+    { id: "worker", icon: PeopleFill, label: "Worker", badge: 0 },
     { id: "category", icon: FolderFill, label: "Category", badge: 0 },
-    { id: "division", icon: Building, label: "Division", badge: 5 },
+    { id: "division", icon: Building, label: "Division", badge: 0 },
     { id: "tasks", icon: Grid3x3GapFill, label: "Tasks", badge: 0 },
     { id: "finance", icon: CashStack, label: "Finance", badge: 0 },
-    { id: "messages", icon: EnvelopeFill, label: "Messages", badge: unreadMessages },
-    { id: "notifications", icon: BellFill, label: "Notifications", badge: unreadNotifications },
+    { id: "messages", icon: EnvelopeFill, label: "Messages", badge: 0 },
+    { id: "notifications", icon: BellFill, label: "Notifications", badge: 0 },
     { id: "settings", icon: GearFill, label: "Settings", badge: 0 },
   ];
 
