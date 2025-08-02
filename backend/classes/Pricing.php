@@ -101,11 +101,11 @@ class Pricing {
     private function getZoneMultiplier($zoneId) {
         try {
             $zoneRule = $this->db->fetch(
-                "SELECT price_multiplier FROM zone_pricing_rules WHERE zone_id = ? AND status = 'active'",
+                "SELECT multiplier FROM pricing_rules WHERE zone_id = ? AND status = 'active'",
                 [$zoneId]
             );
             
-            return $zoneRule ? $zoneRule['price_multiplier'] : 1.0;
+            return $zoneRule ? $zoneRule['multiplier'] : 1.0;
         } catch (Exception $e) {
             return 1.0;
         }
@@ -135,11 +135,12 @@ class Pricing {
     
     private function getDemandMultiplier($serviceId, $zoneId, $requestTime) {
         try {
-            // Count requests in the last 2 hours for same service and zone
+            // Count requests in the last 2 hours for same service and area
             $recentRequests = $this->db->fetch(
-                "SELECT COUNT(*) as count FROM service_requests 
-                 WHERE service_id = ? AND zone_id = ? 
-                 AND created_at >= DATE_SUB(?, INTERVAL 2 HOUR)",
+                "SELECT COUNT(*) as count FROM service_requests sr
+                 LEFT JOIN areas a ON sr.area_id = a.id
+                 WHERE sr.service_id = ? AND a.zone_id = ? 
+                 AND sr.created_at >= DATE_SUB(?, INTERVAL 2 HOUR)",
                 [$serviceId, $zoneId, $requestTime]
             );
             
@@ -210,14 +211,14 @@ class Pricing {
     
     public function getPricingRules($zoneId = null) {
         try {
-            $sql = "SELECT zpr.*, z.name as zone_name 
-                    FROM zone_pricing_rules zpr 
-                    JOIN zones z ON zpr.zone_id = z.id 
-                    WHERE zpr.status = 'active'";
+            $sql = "SELECT pr.*, z.name as zone_name 
+                    FROM pricing_rules pr 
+                    JOIN zones z ON pr.zone_id = z.id 
+                    WHERE pr.status = 'active'";
             $params = [];
             
             if ($zoneId) {
-                $sql .= " AND zpr.zone_id = ?";
+                $sql .= " AND pr.zone_id = ?";
                 $params[] = $zoneId;
             }
             
@@ -234,26 +235,28 @@ class Pricing {
     }
     
     public function createPricingRule($ruleData) {
-        $requiredFields = ['zone_id', 'price_multiplier'];
+        $requiredFields = ['zone_id', 'multiplier'];
         foreach ($requiredFields as $field) {
             if (empty($ruleData[$field])) {
                 return ['success' => false, 'message' => ucfirst($field) . ' is required'];
             }
         }
         
-        if ($ruleData['price_multiplier'] <= 0) {
-            return ['success' => false, 'message' => 'Price multiplier must be greater than 0'];
+        if ($ruleData['multiplier'] <= 0) {
+            return ['success' => false, 'message' => 'Multiplier must be greater than 0'];
         }
         
         try {
             $insertData = [
                 'zone_id' => $ruleData['zone_id'],
-                'price_multiplier' => $ruleData['price_multiplier'],
+                'time_start' => $ruleData['time_start'] ?? '00:00:00',
+                'time_end' => $ruleData['time_end'] ?? '23:59:59',
+                'multiplier' => $ruleData['multiplier'],
                 'description' => $ruleData['description'] ?? '',
                 'status' => 'active'
             ];
             
-            $ruleId = $this->db->insert('zone_pricing_rules', $insertData);
+            $ruleId = $this->db->insert('pricing_rules', $insertData);
             
             return [
                 'success' => true,
@@ -267,12 +270,12 @@ class Pricing {
     }
     
     public function updatePricingRule($ruleId, $ruleData) {
-        if (isset($ruleData['price_multiplier']) && $ruleData['price_multiplier'] <= 0) {
-            return ['success' => false, 'message' => 'Price multiplier must be greater than 0'];
+        if (isset($ruleData['multiplier']) && $ruleData['multiplier'] <= 0) {
+            return ['success' => false, 'message' => 'Multiplier must be greater than 0'];
         }
         
         try {
-            $result = $this->db->update('zone_pricing_rules', $ruleData, ['id' => $ruleId]);
+            $result = $this->db->update('pricing_rules', $ruleData, ['id' => $ruleId]);
             
             if ($result) {
                 return ['success' => true, 'message' => 'Pricing rule updated successfully'];
@@ -287,7 +290,7 @@ class Pricing {
     
     public function deletePricingRule($ruleId) {
         try {
-            $result = $this->db->update('zone_pricing_rules', ['status' => 'inactive'], ['id' => $ruleId]);
+            $result = $this->db->update('pricing_rules', ['status' => 'inactive'], ['id' => $ruleId]);
             
             if ($result) {
                 return ['success' => true, 'message' => 'Pricing rule deleted successfully'];

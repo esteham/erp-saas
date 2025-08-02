@@ -157,51 +157,19 @@ const ModernAdminDashboard = () => {
 
   const loadServiceRequests = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/backend/api/admin/service-requests.php`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/service-requests.php?limit=10`, {
         withCredentials: true
       });
       if (response.data.success) {
         setServiceRequests(response.data.data || []);
       } else {
-        throw new Error('API returned error');
+        throw new Error(response.data.message || 'API returned error');
       }
     } catch (error) {
       console.error('Failed to load service requests:', error);
-      // Fallback data for demo
-      setServiceRequests([
-        {
-          id: 1,
-          service_name: 'Plumbing Repair',
-          customer_name: 'John Doe',
-          address: '123 Main St',
-          phone: '+1234567890',
-          price: 150,
-          status: 'pending',
-          created_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: 2,
-          service_name: 'House Cleaning',
-          customer_name: 'Jane Smith',
-          address: '456 Oak Ave',
-          phone: '+1234567891',
-          price: 80,
-          status: 'assigned',
-          worker_name: 'Alice Wilson',
-          created_at: '2024-01-16T14:20:00Z'
-        },
-        {
-          id: 3,
-          service_name: 'Electrical Work',
-          customer_name: 'Mike Johnson',
-          address: '789 Pine St',
-          phone: '+1234567892',
-          price: 200,
-          status: 'completed',
-          worker_name: 'Bob Brown',
-          created_at: '2024-01-17T09:15:00Z'
-        }
-      ]);
+      toast.error('Failed to load service requests. Please check your connection and try again.');
+      setServiceRequests([]);
     }
   };
 

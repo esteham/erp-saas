@@ -34,21 +34,21 @@ const SettingsContent = () => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
-      const response = await axios.get(`${apiUrl}/backend/api/admin/settings.php?action=list`, {
+      const response = await axios.get(`${apiUrl}/backend/api/admin/settings.php`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        const groupedSettings = response.data.data.grouped_settings || {};
+        const settingsData = response.data.data || {};
         
-        // Transform the grouped settings to match the expected format
+        // Transform the settings to match the expected format
         const transformedSettings = {
           general: {
-            siteName: getSettingValue(groupedSettings.site, 'site_name', 'Local Service Provider'),
-            siteDescription: getSettingValue(groupedSettings.site, 'site_description', 'Professional home services platform'),
-            timezone: getSettingValue(groupedSettings.default, 'default_timezone', 'America/New_York'),
-            language: getSettingValue(groupedSettings.default, 'default_language', 'en'),
-            maintenanceMode: getSettingValue(groupedSettings.maintenance, 'maintenance_mode', '0') === '1'
+            siteName: getSettingValue(settingsData, 'site_name', 'Local Service Provider'),
+            siteDescription: getSettingValue(settingsData, 'site_description', 'Professional home services platform'),
+            timezone: getSettingValue(settingsData, 'default_timezone', 'America/New_York'),
+            language: getSettingValue(settingsData, 'default_language', 'en'),
+            maintenanceMode: getSettingValue(settingsData, 'maintenance_mode', '0') === '1'
           },
           notifications: {
             emailNotifications: true,
@@ -60,33 +60,33 @@ const SettingsContent = () => {
           },
           security: {
             twoFactorAuth: false,
-            sessionTimeout: parseInt(getSettingValue(groupedSettings.security, 'security_session_timeout', '30')),
+            sessionTimeout: parseInt(getSettingValue(settingsData, 'security_session_timeout', '30')),
             passwordExpiry: 90,
-            loginAttempts: parseInt(getSettingValue(groupedSettings.security, 'security_max_login_attempts', '5')),
+            loginAttempts: parseInt(getSettingValue(settingsData, 'security_max_login_attempts', '5')),
             ipWhitelist: '',
             sslRequired: true
           },
           email: {
-            smtpHost: getSettingValue(groupedSettings.email, 'email_smtp_host', 'smtp.gmail.com'),
-            smtpPort: parseInt(getSettingValue(groupedSettings.email, 'email_smtp_port', '587')),
-            smtpUser: getSettingValue(groupedSettings.email, 'email_smtp_username', ''),
-            smtpPassword: getSettingValue(groupedSettings.email, 'email_smtp_password', ''),
-            fromEmail: getSettingValue(groupedSettings.email, 'email_from_address', 'noreply@localservice.com'),
-            fromName: getSettingValue(groupedSettings.email, 'email_from_name', 'Local Service Provider')
+            smtpHost: getSettingValue(settingsData, 'email_smtp_host', 'smtp.gmail.com'),
+            smtpPort: parseInt(getSettingValue(settingsData, 'email_smtp_port', '587')),
+            smtpUser: getSettingValue(settingsData, 'email_smtp_username', ''),
+            smtpPassword: getSettingValue(settingsData, 'email_smtp_password', ''),
+            fromEmail: getSettingValue(settingsData, 'email_from_address', 'noreply@localservice.com'),
+            fromName: getSettingValue(settingsData, 'email_from_name', 'Local Service Provider')
           },
           appearance: {
             theme: 'light',
             primaryColor: '#dc2626',
             secondaryColor: '#6b7280',
-            logoUrl: getSettingValue(groupedSettings.site, 'site_logo', ''),
-            faviconUrl: getSettingValue(groupedSettings.site, 'site_favicon', '')
+            logoUrl: getSettingValue(settingsData, 'site_logo', ''),
+            faviconUrl: getSettingValue(settingsData, 'site_favicon', '')
           },
           system: {
             backupFrequency: 'daily',
             logLevel: 'info',
             cacheEnabled: true,
             debugMode: false,
-            apiRateLimit: parseInt(getSettingValue(groupedSettings.api, 'api_rate_limit', '1000'))
+            apiRateLimit: parseInt(getSettingValue(settingsData, 'api_rate_limit', '1000'))
           }
         };
         
@@ -124,12 +124,12 @@ const SettingsContent = () => {
           sslRequired: true
         },
         email: {
-          smtpHost: '',
+          smtpHost: 'smtp.gmail.com',
           smtpPort: 587,
           smtpUser: '',
           smtpPassword: '',
-          fromEmail: '',
-          fromName: ''
+          fromEmail: 'noreply@localservice.com',
+          fromName: 'Local Service Provider'
         },
         appearance: {
           theme: 'light',
@@ -151,11 +151,13 @@ const SettingsContent = () => {
     }
   };
 
-  // Helper function to get setting value from grouped settings
-  const getSettingValue = (settingsGroup, key, defaultValue) => {
-    if (!settingsGroup || !Array.isArray(settingsGroup)) return defaultValue;
-    const setting = settingsGroup.find(s => s.setting_key === key);
-    return setting ? setting.setting_value : defaultValue;
+  // Helper function to get setting value from the settings data
+  const getSettingValue = (settingsData, key, defaultValue) => {
+    if (Array.isArray(settingsData)) {
+      const setting = settingsData.find(s => s.setting_key === key);
+      return setting ? setting.setting_value : defaultValue;
+    }
+    return settingsData[key] || defaultValue;
   };
 
   const saveSettings = async () => {

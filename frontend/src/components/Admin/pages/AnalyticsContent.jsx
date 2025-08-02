@@ -28,20 +28,20 @@ const AnalyticsContent = () => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
-      const response = await axios.get(`${apiUrl}/backend/api/admin/analytics.php?range=${timeRange}`, {
+      const response = await axios.get(`${apiUrl}/backend/api/admin/analytics.php?timeRange=${timeRange}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
         const data = response.data.data;
         setAnalytics({
-          revenue: data.revenue || { current: 0, previous: 0, growth: 0 },
-          users: data.users || { current: 0, previous: 0, growth: 0 },
-          requests: data.requests || { current: 0, previous: 0, growth: 0 },
-          workers: data.workers || { current: 0, previous: 0, growth: 0 },
-          monthlyRevenue: data.revenue_trend || [],
-          topServices: data.top_services || [],
-          topWorkers: data.top_workers || []
+          revenue: data.metrics?.revenue || { current: 0, growth: 0 },
+          users: data.metrics?.users || { current: 0, growth: 0 },
+          requests: data.metrics?.requests || { current: 0, growth: 0 },
+          workers: data.metrics?.workers || { current: 0, growth: 0 },
+          monthlyRevenue: data.charts?.monthlyRevenue || [],
+          topServices: data.charts?.topServices || [],
+          topWorkers: data.charts?.topWorkers || []
         });
       } else {
         throw new Error(response.data.message || 'API returned error');
@@ -51,10 +51,10 @@ const AnalyticsContent = () => {
       toast.error('Failed to load analytics data. Please check your connection and try again.');
       // Set empty state instead of dummy data
       setAnalytics({
-        revenue: { current: 0, previous: 0, growth: 0 },
-        users: { current: 0, previous: 0, growth: 0 },
-        requests: { current: 0, previous: 0, growth: 0 },
-        workers: { current: 0, previous: 0, growth: 0 },
+        revenue: { current: 0, growth: 0 },
+        users: { current: 0, growth: 0 },
+        requests: { current: 0, growth: 0 },
+        workers: { current: 0, growth: 0 },
         monthlyRevenue: [],
         topServices: [],
         topWorkers: []

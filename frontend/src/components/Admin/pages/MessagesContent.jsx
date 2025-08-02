@@ -32,21 +32,22 @@ const MessagesContent = () => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
-      const response = await axios.get(`${apiUrl}/backend/api/admin/messages.php?action=list&status=${filter === 'all' ? '' : filter}`, {
+      const statusParam = filter === 'all' ? '' : `&status=${filter}`;
+      const response = await axios.get(`${apiUrl}/backend/api/admin/messages.php?limit=50${statusParam}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        const messages = response.data.data.messages || [];
+        const messages = response.data.data || [];
         setMessages(messages.map(message => ({
           id: message.id,
           from: message.sender_name,
-          fromRole: 'user', // Default role, could be enhanced
+          fromRole: 'user',
           subject: message.subject,
           message: message.message,
           timestamp: message.created_at,
-          isRead: message.status !== 'unread',
-          priority: message.priority,
+          isRead: message.is_read,
+          priority: 'medium', // Default priority since our API doesn't have this
           type: message.type
         })));
       } else {

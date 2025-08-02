@@ -39,27 +39,28 @@ const FinanceContent = () => {
       });
       
       if (overviewResponse.data.success) {
-        const overview = overviewResponse.data.data.overview;
+        const overview = overviewResponse.data.data;
         setFinancialData({
-          totalRevenue: overview.revenue.current || 0,
-          totalExpenses: overview.expenses.current || 0,
-          netProfit: overview.profit.current || 0,
-          pendingPayments: overview.revenue.current * 0.15 || 0, // Estimate pending as 15% of revenue
-          completedTransactions: transactionsResponse.data.data?.pagination?.total_items || 0,
-          averageOrderValue: overview.revenue.current / Math.max(1, transactionsResponse.data.data?.pagination?.total_items || 1)
+          totalRevenue: overview.totalRevenue || 0,
+          totalExpenses: overview.platformCommission || 0,
+          netProfit: overview.workerPayouts || 0,
+          pendingPayments: overview.pendingPayments || 0,
+          completedTransactions: overview.transactionCount || 0,
+          averageOrderValue: overview.avgTransaction || 0
         });
       }
       
       if (transactionsResponse.data.success) {
-        const transactions = transactionsResponse.data.data.transactions || [];
+        const transactions = transactionsResponse.data.data || [];
         setTransactions(transactions.map(transaction => ({
           id: transaction.id,
-          type: 'income', // All service requests are income
+          type: 'income',
           amount: parseFloat(transaction.amount),
-          description: `${transaction.service} - ${transaction.customer}`,
+          description: `${transaction.service_name} - ${transaction.customer_name}`,
           date: transaction.created_at?.split(' ')[0] || transaction.created_at,
           status: transaction.status,
-          method: 'service_payment'
+          customer: transaction.customer_name,
+          worker: transaction.worker_name
         })));
       }
       

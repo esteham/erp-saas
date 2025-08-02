@@ -32,10 +32,12 @@ const ScheduleContent = () => {
   const loadSchedules = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/backend/api/admin/schedules.php`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/schedule.php`, {
         params: {
           date: currentDate.toISOString().split('T')[0],
-          view: viewMode
+          view: viewMode,
+          status: filterStatus === 'all' ? '' : filterStatus
         },
         withCredentials: true
       });
@@ -43,69 +45,12 @@ const ScheduleContent = () => {
       if (response.data.success) {
         setSchedules(response.data.data || []);
       } else {
-        throw new Error('API returned error');
+        throw new Error(response.data.message || 'API returned error');
       }
     } catch (error) {
       console.error('Failed to load schedules:', error);
-      // Fallback data for demo
-      setSchedules([
-        {
-          id: 1,
-          title: 'Plumbing Repair - John Doe',
-          worker_name: 'Alice Wilson',
-          customer_name: 'John Doe',
-          service_type: 'Plumbing',
-          date: '2024-01-15',
-          time: '09:00',
-          duration: 120,
-          address: '123 Main St',
-          phone: '+1234567890',
-          status: 'scheduled',
-          notes: 'Kitchen sink repair'
-        },
-        {
-          id: 2,
-          title: 'House Cleaning - Jane Smith',
-          worker_name: 'Carol Davis',
-          customer_name: 'Jane Smith',
-          service_type: 'Cleaning',
-          date: '2024-01-15',
-          time: '14:00',
-          duration: 180,
-          address: '456 Oak Ave',
-          phone: '+1234567891',
-          status: 'in_progress',
-          notes: 'Deep cleaning service'
-        },
-        {
-          id: 3,
-          title: 'Electrical Work - Mike Johnson',
-          worker_name: 'Bob Brown',
-          customer_name: 'Mike Johnson',
-          service_type: 'Electrical',
-          date: '2024-01-16',
-          time: '10:30',
-          duration: 90,
-          address: '789 Pine St',
-          phone: '+1234567892',
-          status: 'completed',
-          notes: 'Light fixture installation'
-        },
-        {
-          id: 4,
-          title: 'Garden Maintenance - Sarah Wilson',
-          worker_name: 'David Green',
-          customer_name: 'Sarah Wilson',
-          service_type: 'Gardening',
-          date: '2024-01-17',
-          time: '08:00',
-          duration: 240,
-          address: '321 Elm St',
-          phone: '+1234567893',
-          status: 'scheduled',
-          notes: 'Lawn mowing and hedge trimming'
-        }
-      ]);
+      toast.error('Failed to load schedules. Please check your connection and try again.');
+      setSchedules([]);
     } finally {
       setLoading(false);
     }

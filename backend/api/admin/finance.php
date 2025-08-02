@@ -1,330 +1,264 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:5173');
+header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
 require_once '../../config/database.php';
+require_once '../../middleware/auth.php';
 
-try {
-    $pdo = DatabaseConfig::getConnection();
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    switch ($method) {
-        case 'GET':
-            handleGetRequest($pdo);
-            break;
-        case 'POST':
-            handlePostRequest($pdo);
-            break;
-        case 'PUT':
-            handlePutRequest($pdo);
-            break;
-        case 'DELETE':
-            handleDeleteRequest($pdo);
-            break;
-        default:
-            throw new Exception('Method not allowed');
-    }
-    
-} catch (Exception $e) {
-    error_log('Finance API Error: ' . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'message' => 'Finance API error',
-        'error' => $e->getMessage()
-    ]);
+// Check if user is authenticated and is admin
+if (!isAuthenticated() || !isAdmin()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit;
 }
 
-function handleGetRequest($pdo) {
+try {
+    $pdo = getDBConnection();
     $action = $_GET['action'] ?? 'overview';
     
     switch ($action) {
         case 'overview':
-            getFinanceOverview($pdo);
+            // Get total revenue from completed requests
+            $stmt = $pdo->query("SELECT COALESCE(SUM(total_price), 0) as total_revenue 
+                               FROM service_requests 
+                               WHERE status = 'completed'");
+            $totalRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
+            
+            // Get this month's revenue
+            $stmt = $pdo->query("SELECT COALESCE(SUM(total_price), 0) as monthly_revenue 
+                               FROM service_requests 
+                               WHERE status = 'completed' 
+                               AND MONTH(created_at) = MONTH(CURRENT_DATE()) 
+                               AND YEAR(created_at) = YEAR(CURRENT_DATE())");
+            $monthlyRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['monthly_revenue'];
+            
+            // Get pending payments (confirmed but not completed)
+            $stmt = $pdo->query("SELECT COALESCE(SUM(total_price), 0) as pending_payments 
+                               FROM service_requests 
+                               WHERE status IN ('confirmed', 'in_progress')");
+            $pendingPayments = $stmt->fetch(PDO::FETCH_ASSOC)['pending_payments'];
+            
+            // Calculate platform commission (assuming 10% commission)
+            $platformCommission = $totalRevenue * 0.10;
+            $workerPayouts = $totalRevenue - $platformCommission;
+            
+            // Get average transaction value
+            $stmt = $pdo->query("SELECT COALESCE(AVG(total_price), 0) as avg_transaction 
+                               FROM service_requests 
+                               WHERE status = 'completed'");
+            $avgTransaction = $stmt->fetch(PDO::FETCH_ASSOC)['avg_transaction'];
+            
+            // Get transaction count
+            $stmt = $pdo->query("SELECT COUNT(*) as transaction_count 
+                               FROM service_requests 
+                               WHERE status = 'completed'");
+            $transactionCount = $stmt->fetch(PDO::FETCH_ASSOC)['transaction_count'];
+            
+            $overview = [
+                'totalRevenue' => (float)$totalRevenue,
+                'monthlyRevenue' => (float)$monthlyRevenue,
+                'pendingPayments' => (float)$pendingPayments,
+                'platformCommission' => (float)$platformCommission,
+                'workerPayouts' => (float)$workerPayouts,
+                'avgTransaction' => (float)$avgTransaction,
+                'transactionCount' => (int)$transactionCount
+            ];
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $overview
+            ]);
             break;
+            
         case 'transactions':
-            getTransactions($pdo);
+            $limit = $_GET['limit'] ?? 50;
+            $offset = $_GET['offset'] ?? 0;
+            $status = $_GET['status'] ?? null;
+            
+            $whereClause = "WHERE 1=1";
+            $params = [];
+            
+            if ($status) {
+                $whereClause .= " AND sr.status = ?";
+                $params[] = $status;
+            }
+            
+            // Get transactions with customer and worker details
+            $sql = "SELECT 
+                        sr.id,
+                        sr.total_price,
+                        sr.status,
+                        sr.created_at,
+                        sr.updated_at,
+                        s.name as service_name,
+                        CONCAT(cu.first_name, ' ', cu.last_name) as customer_name,
+                        cu.email as customer_email,
+                        CONCAT(wu.first_name, ' ', wu.last_name) as worker_name,
+                        wu.email as worker_email,
+                        sr.total_price * 0.10 as platform_commission,
+                        sr.total_price * 0.90 as worker_payout
+                    FROM service_requests sr
+                    LEFT JOIN services s ON sr.service_id = s.id
+                    LEFT JOIN users cu ON sr.user_id = cu.id
+                    LEFT JOIN workers w ON sr.worker_id = w.id
+                    LEFT JOIN users wu ON w.user_id = wu.id
+                    $whereClause
+                    ORDER BY sr.created_at DESC
+                    LIMIT ? OFFSET ?";
+            
+            $params[] = (int)$limit;
+            $params[] = (int)$offset;
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Format transactions
+            $formattedTransactions = array_map(function($transaction) {
+                return [
+                    'id' => (int)$transaction['id'],
+                    'amount' => (float)$transaction['total_price'],
+                    'status' => $transaction['status'],
+                    'service_name' => $transaction['service_name'],
+                    'customer_name' => $transaction['customer_name'],
+                    'customer_email' => $transaction['customer_email'],
+                    'worker_name' => $transaction['worker_name'],
+                    'worker_email' => $transaction['worker_email'],
+                    'platform_commission' => (float)$transaction['platform_commission'],
+                    'worker_payout' => (float)$transaction['worker_payout'],
+                    'created_at' => $transaction['created_at'],
+                    'updated_at' => $transaction['updated_at']
+                ];
+            }, $transactions);
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $formattedTransactions
+            ]);
             break;
-        case 'expenses':
-            getExpenses($pdo);
+            
+        case 'revenue_chart':
+            $period = $_GET['period'] ?? 'monthly'; // daily, weekly, monthly, yearly
+            
+            switch ($period) {
+                case 'daily':
+                    $sql = "SELECT 
+                                DATE(created_at) as period,
+                                COALESCE(SUM(total_price), 0) as revenue
+                            FROM service_requests 
+                            WHERE status = 'completed' 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                            GROUP BY DATE(created_at)
+                            ORDER BY period";
+                    break;
+                case 'weekly':
+                    $sql = "SELECT 
+                                YEARWEEK(created_at) as period,
+                                COALESCE(SUM(total_price), 0) as revenue
+                            FROM service_requests 
+                            WHERE status = 'completed' 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 12 WEEK)
+                            GROUP BY YEARWEEK(created_at)
+                            ORDER BY period";
+                    break;
+                case 'yearly':
+                    $sql = "SELECT 
+                                YEAR(created_at) as period,
+                                COALESCE(SUM(total_price), 0) as revenue
+                            FROM service_requests 
+                            WHERE status = 'completed' 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 5 YEAR)
+                            GROUP BY YEAR(created_at)
+                            ORDER BY period";
+                    break;
+                default: // monthly
+                    $sql = "SELECT 
+                                DATE_FORMAT(created_at, '%Y-%m') as period,
+                                COALESCE(SUM(total_price), 0) as revenue
+                            FROM service_requests 
+                            WHERE status = 'completed' 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                            ORDER BY period";
+            }
+            
+            $stmt = $pdo->query($sql);
+            $chartData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $chartData
+            ]);
             break;
+            
+        case 'worker_payouts':
+            $limit = $_GET['limit'] ?? 20;
+            
+            // Get worker payout summary
+            $sql = "SELECT 
+                        w.id as worker_id,
+                        CONCAT(u.first_name, ' ', u.last_name) as worker_name,
+                        u.email as worker_email,
+                        COUNT(sr.id) as completed_jobs,
+                        COALESCE(SUM(sr.total_price), 0) as total_earned,
+                        COALESCE(SUM(sr.total_price * 0.90), 0) as worker_payout,
+                        COALESCE(SUM(sr.total_price * 0.10), 0) as platform_commission,
+                        COALESCE(AVG(sr.total_price), 0) as avg_job_value
+                    FROM workers w
+                    JOIN users u ON w.user_id = u.id
+                    LEFT JOIN service_requests sr ON w.id = sr.worker_id AND sr.status = 'completed'
+                    WHERE w.status = 'active'
+                    GROUP BY w.id, u.first_name, u.last_name, u.email
+                    HAVING completed_jobs > 0
+                    ORDER BY total_earned DESC
+                    LIMIT ?";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([(int)$limit]);
+            $workerPayouts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Format data
+            $formattedPayouts = array_map(function($payout) {
+                return [
+                    'worker_id' => (int)$payout['worker_id'],
+                    'worker_name' => $payout['worker_name'],
+                    'worker_email' => $payout['worker_email'],
+                    'completed_jobs' => (int)$payout['completed_jobs'],
+                    'total_earned' => (float)$payout['total_earned'],
+                    'worker_payout' => (float)$payout['worker_payout'],
+                    'platform_commission' => (float)$payout['platform_commission'],
+                    'avg_job_value' => (float)$payout['avg_job_value']
+                ];
+            }, $workerPayouts);
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $formattedPayouts
+            ]);
+            break;
+            
         default:
-            throw new Exception('Invalid action');
-    }
-}
-
-function getFinanceOverview($pdo) {
-    // Get current month revenue
-    $revenueQuery = "
-        SELECT 
-            SUM(CASE WHEN MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW()) THEN final_price ELSE 0 END) as current_month_revenue,
-            SUM(CASE WHEN MONTH(created_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH)) THEN final_price ELSE 0 END) as last_month_revenue,
-            SUM(final_price) as total_revenue
-        FROM service_requests 
-        WHERE status = 'completed'
-    ";
-    
-    $stmt = $pdo->prepare($revenueQuery);
-    $stmt->execute();
-    $revenueData = $stmt->fetch();
-    
-    $currentRevenue = (float)($revenueData['current_month_revenue'] ?? 0);
-    $lastRevenue = (float)($revenueData['last_month_revenue'] ?? 0);
-    $totalRevenue = (float)($revenueData['total_revenue'] ?? 0);
-    $revenueGrowth = $lastRevenue > 0 ? (($currentRevenue - $lastRevenue) / $lastRevenue) * 100 : 0;
-    
-    // Get expenses (mock data since we don't have expenses table)
-    $currentExpenses = $currentRevenue * 0.3; // 30% of revenue as expenses
-    $lastExpenses = $lastRevenue * 0.3;
-    $expensesGrowth = $lastExpenses > 0 ? (($currentExpenses - $lastExpenses) / $lastExpenses) * 100 : 0;
-    
-    // Calculate profit
-    $currentProfit = $currentRevenue - $currentExpenses;
-    $lastProfit = $lastRevenue - $lastExpenses;
-    $profitGrowth = $lastProfit > 0 ? (($currentProfit - $lastProfit) / $lastProfit) * 100 : 0;
-    
-    // Get commission data
-    $commissionQuery = "
-        SELECT 
-            SUM(final_price * 0.1) as total_commission
-        FROM service_requests 
-        WHERE status = 'completed'
-        AND MONTH(created_at) = MONTH(NOW()) 
-        AND YEAR(created_at) = YEAR(NOW())
-    ";
-    
-    $stmt = $pdo->prepare($commissionQuery);
-    $stmt->execute();
-    $commissionData = $stmt->fetch();
-    $commission = (float)($commissionData['total_commission'] ?? 0);
-    
-    // Get monthly revenue trend
-    $trendQuery = "
-        SELECT 
-            DATE_FORMAT(created_at, '%Y-%m') as month,
-            SUM(final_price) as revenue,
-            COUNT(*) as transactions
-        FROM service_requests 
-        WHERE status = 'completed' 
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-        ORDER BY month ASC
-    ";
-    
-    $stmt = $pdo->prepare($trendQuery);
-    $stmt->execute();
-    $trendData = $stmt->fetchAll();
-    
-    $response = [
-        'success' => true,
-        'data' => [
-            'overview' => [
-                'revenue' => [
-                    'current' => $currentRevenue,
-                    'previous' => $lastRevenue,
-                    'growth' => round($revenueGrowth, 1),
-                    'total' => $totalRevenue
-                ],
-                'expenses' => [
-                    'current' => $currentExpenses,
-                    'previous' => $lastExpenses,
-                    'growth' => round($expensesGrowth, 1)
-                ],
-                'profit' => [
-                    'current' => $currentProfit,
-                    'previous' => $lastProfit,
-                    'growth' => round($profitGrowth, 1)
-                ],
-                'commission' => $commission
-            ],
-            'trend' => $trendData
-        ]
-    ];
-    
-    echo json_encode($response);
-}
-
-function getTransactions($pdo) {
-    $page = (int)($_GET['page'] ?? 1);
-    $limit = (int)($_GET['limit'] ?? 10);
-    $offset = ($page - 1) * $limit;
-    
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    
-    $whereClause = "WHERE 1=1";
-    $params = [];
-    
-    if (!empty($search)) {
-        $whereClause .= " AND (u.username LIKE ? OR sr.title LIKE ?)";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-    }
-    
-    if (!empty($status)) {
-        $whereClause .= " AND sr.status = ?";
-        $params[] = $status;
-    }
-    
-    $query = "
-        SELECT 
-            sr.id,
-            sr.title,
-            u.username as customer,
-            w_user.username as worker,
-            s.name as service,
-            sr.final_price as amount,
-            sr.status,
-            sr.created_at,
-            sr.completed_at
-        FROM service_requests sr
-        JOIN users u ON sr.user_id = u.id
-        LEFT JOIN workers w ON sr.worker_id = w.id
-        LEFT JOIN users w_user ON w.user_id = w_user.id
-        JOIN services s ON sr.service_id = s.id
-        $whereClause
-        ORDER BY sr.created_at DESC
-        LIMIT $limit OFFSET $offset
-    ";
-    
-    $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
-    $transactions = $stmt->fetchAll();
-    
-    // Get total count
-    $countQuery = "
-        SELECT COUNT(*) as total
-        FROM service_requests sr
-        JOIN users u ON sr.user_id = u.id
-        LEFT JOIN workers w ON sr.worker_id = w.id
-        LEFT JOIN users w_user ON w.user_id = w_user.id
-        JOIN services s ON sr.service_id = s.id
-        $whereClause
-    ";
-    
-    $stmt = $pdo->prepare($countQuery);
-    $stmt->execute($params);
-    $totalCount = $stmt->fetch()['total'];
-    
-    $response = [
-        'success' => true,
-        'data' => [
-            'transactions' => $transactions,
-            'pagination' => [
-                'current_page' => $page,
-                'total_pages' => ceil($totalCount / $limit),
-                'total_items' => (int)$totalCount,
-                'items_per_page' => $limit
-            ]
-        ]
-    ];
-    
-    echo json_encode($response);
-}
-
-function getExpenses($pdo) {
-    // Mock expenses data since we don't have expenses table
-    $expenses = [
-        [
-            'id' => 1,
-            'category' => 'Marketing',
-            'description' => 'Social media advertising',
-            'amount' => 1500.00,
-            'date' => date('Y-m-d', strtotime('-5 days')),
-            'status' => 'paid'
-        ],
-        [
-            'id' => 2,
-            'category' => 'Operations',
-            'description' => 'Server hosting costs',
-            'amount' => 299.99,
-            'date' => date('Y-m-d', strtotime('-10 days')),
-            'status' => 'paid'
-        ],
-        [
-            'id' => 3,
-            'category' => 'Staff',
-            'description' => 'Customer support salaries',
-            'amount' => 3200.00,
-            'date' => date('Y-m-d', strtotime('-15 days')),
-            'status' => 'paid'
-        ],
-        [
-            'id' => 4,
-            'category' => 'Utilities',
-            'description' => 'Office electricity bill',
-            'amount' => 450.00,
-            'date' => date('Y-m-d', strtotime('-20 days')),
-            'status' => 'pending'
-        ]
-    ];
-    
-    $response = [
-        'success' => true,
-        'data' => [
-            'expenses' => $expenses
-        ]
-    ];
-    
-    echo json_encode($response);
-}
-
-function handlePostRequest($pdo) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $action = $input['action'] ?? '';
-    
-    switch ($action) {
-        case 'add_expense':
-            addExpense($pdo, $input);
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid action specified'
+            ]);
             break;
-        default:
-            throw new Exception('Invalid action');
     }
-}
-
-function addExpense($pdo, $data) {
-    // Since we don't have expenses table, return success with mock data
-    $response = [
-        'success' => true,
-        'message' => 'Expense added successfully',
-        'data' => [
-            'id' => rand(100, 999),
-            'category' => $data['category'] ?? '',
-            'description' => $data['description'] ?? '',
-            'amount' => (float)($data['amount'] ?? 0),
-            'date' => $data['date'] ?? date('Y-m-d'),
-            'status' => 'pending'
-        ]
-    ];
     
-    echo json_encode($response);
-}
-
-function handlePutRequest($pdo) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    // Handle expense updates
-    $response = [
-        'success' => true,
-        'message' => 'Expense updated successfully'
-    ];
-    
-    echo json_encode($response);
-}
-
-function handleDeleteRequest($pdo) {
-    $id = $_GET['id'] ?? '';
-    // Handle expense deletion
-    $response = [
-        'success' => true,
-        'message' => 'Expense deleted successfully'
-    ];
-    
-    echo json_encode($response);
+} catch (Exception $e) {
+    error_log("Finance API Error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to fetch finance data'
+    ]);
 }
 ?>

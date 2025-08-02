@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../../config/database.php';
 require_once '../../middleware/auth.php';
+require_once '../../classes/ServiceRequest.php';
 
 // Check if user is authenticated and is admin
 if (!isAuthenticated() || !isAdmin()) {
@@ -19,66 +20,101 @@ if (!isAuthenticated() || !isAdmin()) {
     exit;
 }
 
+$method = $_SERVER['REQUEST_METHOD'];
+$serviceRequest = new ServiceRequest();
+
 try {
-    $pdo = getDBConnection();
+    switch ($method) {
+        case 'GET':
+            // Handle different GET operations
+            if (isset($_GET['id'])) {
+                // Get specific service request
+                $result = $serviceRequest->getServiceRequestById($_GET['id']);
+            } elseif (isset($_GET['stats'])) {
+                // Get service request statistics
+                $filters = [];
+                if (isset($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
+                if (isset($_GET['date_to'])) $filters['date_to'] = $_GET['date_to'];
+                if (isset($_GET['worker_id'])) $filters['worker_id'] = $_GET['worker_id'];
+                if (isset($_GET['user_id'])) $filters['user_id'] = $_GET['user_id'];
+                
+                $result = $serviceRequest->getServiceRequestStats($filters);
+            } else {
+                // Get all service requests with filters
+                $filters = [];
+                if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
+                if (isset($_GET['urgency'])) $filters['urgency'] = $_GET['urgency'];
+                if (isset($_GET['worker_id'])) $filters['worker_id'] = $_GET['worker_id'];
+                if (isset($_GET['user_id'])) $filters['user_id'] = $_GET['user_id'];
+                if (isset($_GET['service_id'])) $filters['service_id'] = $_GET['service_id'];
+                if (isset($_GET['area_id'])) $filters['area_id'] = $_GET['area_id'];
+                if (isset($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
+                if (isset($_GET['date_to'])) $filters['date_to'] = $_GET['date_to'];
+                if (isset($_GET['search'])) $filters['search'] = $_GET['search'];
+                if (isset($_GET['limit'])) $filters['limit'] = $_GET['limit'];
+                
+                $result = $serviceRequest->getAllServiceRequests($filters);
+            }
+            break;
+            
+        case 'POST':
+            // Create new service request
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $serviceRequest->createServiceRequest($data);
+            break;
+            
+        case 'PUT':
+            // Update service request
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (isset($_GET['id'])) {
+                if (isset($data['action'])) {
+                    switch ($data['action']) {
+                        case 'assign_worker':
+                            $result = $serviceRequest->assignWorker($_GET['id'], $data['worker_id']);
+                            break;
+                        case 'update_status':
+                            $additionalData = isset($data['additional_data']) ? $data['additional_data'] : [];
+                            $result = $serviceRequest->updateStatus($_GET['id'], $data['status'], $additionalData);
+                            break;
+                        default:
+                            $result = $serviceRequest->updateServiceRequest($_GET['id'], $data);
+                    }
+                } else {
+                    $result = $serviceRequest->updateServiceRequest($_GET['id'], $data);
+                }
+            } else {
+                $result = ['success' => false, 'message' => 'Service request ID is required'];
+            }
+            break;
+            
+        case 'DELETE':
+            // Delete service request
+            if (isset($_GET['id'])) {
+                $result = $serviceRequest->deleteServiceRequest($_GET['id']);
+            } else {
+                $result = ['success' => false, 'message' => 'Service request ID is required'];
+            }
+            break;
+            
+        default:
+            $result = ['success' => false, 'message' => 'Method not allowed'];
+            break;
+    }
     
-    // Get all service requests with customer and worker details
-    $sql = "SELECT 
-                sr.id,
-                sr.service_name,
-                sr.address,
-                sr.phone,
-                sr.price,
-                sr.status,
-                sr.created_at,
-                sr.customer_id,
-                sr.worker_id,
-                CONCAT(cu.first_name, ' ', cu.last_name) as customer_name,
-                cu.email as customer_email,
-                CONCAT(wu.first_name, ' ', wu.last_name) as worker_name,
-                wu.email as worker_email,
-                c.name as category_name
-            FROM service_requests sr
-            LEFT JOIN users cu ON sr.customer_id = cu.id
-            LEFT JOIN workers w ON sr.worker_id = w.id
-            LEFT JOIN users wu ON w.user_id = wu.id
-            LEFT JOIN categories c ON sr.category_id = c.id
-            ORDER BY sr.created_at DESC";
-    
-    $stmt = $pdo->query($sql);
-    $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Format the data for frontend consumption
-    $formattedRequests = array_map(function($request) {
-        return [
-            'id' => (int)$request['id'],
-            'service_name' => $request['service_name'],
-            'customer_name' => $request['customer_name'],
-            'customer_id' => (int)$request['customer_id'],
-            'customer_email' => $request['customer_email'],
-            'address' => $request['address'],
-            'phone' => $request['phone'],
-            'price' => (float)$request['price'],
-            'status' => $request['status'],
-            'created_at' => $request['created_at'],
-            'worker_id' => $request['worker_id'] ? (int)$request['worker_id'] : null,
-            'worker_name' => $request['worker_name'],
-            'worker_email' => $request['worker_email'],
-            'category_name' => $request['category_name']
-        ];
-    }, $requests);
-    
-    echo json_encode([
-        'success' => true,
-        'data' => $formattedRequests
-    ]);
+    if ($result['success']) {
+        echo json_encode($result);
+    } else {
+        http_response_code(400);
+        echo json_encode($result);
+    }
     
 } catch (Exception $e) {
     error_log("Service Requests API Error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Failed to fetch service requests'
+        'message' => 'Failed to process service request operation'
     ]);
 }
 ?>

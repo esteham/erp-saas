@@ -1,5 +1,3 @@
--- Create database schema for Local Service Provider Network
-
 -- Location hierarchy tables
 CREATE TABLE IF NOT EXISTS divisions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,7 +41,22 @@ CREATE TABLE IF NOT EXISTS areas (
     UNIQUE KEY unique_area_zone (name, zone_id)
 );
 
--- Service categories and services
+-- User management
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'agent', 'worker', 'user') NOT NULL DEFAULT 'user',
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    reset_token VARCHAR(255) NULL,
+    reset_token_expiry TIMESTAMP NULL,
+    last_login TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Categories and services
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -65,28 +78,23 @@ CREATE TABLE IF NOT EXISTS services (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
--- User management
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'agent', 'worker', 'user') NOT NULL DEFAULT 'user',
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    reset_token VARCHAR(255) NULL,
-    reset_token_expiry TIMESTAMP NULL,
-    last_login TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Worker/Provider profiles
+-- Worker profiles
 CREATE TABLE IF NOT EXISTS workers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    zone_id INT,
+    area_id INT,
+    category_id INT DEFAULT NULL,
     phone VARCHAR(20) NOT NULL,
+    image VARCHAR(255),
+    join_date DATE NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
     address TEXT NOT NULL,
     skills TEXT NOT NULL,
+    emergency_name VARCHAR(100),
+    emergency_phone VARCHAR(20),
+    emergency_relation VARCHAR(50),
     experience INT DEFAULT 0,
     hourly_rate DECIMAL(8,2) DEFAULT 0.00,
     availability ENUM('available', 'busy', 'offline') DEFAULT 'available',
@@ -97,6 +105,9 @@ CREATE TABLE IF NOT EXISTS workers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL,
+    FOREIGN KEY (area_id) REFERENCES areas(id) ON DELETE SET NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     UNIQUE KEY unique_worker_user (user_id)
 );
 
@@ -122,20 +133,31 @@ CREATE TABLE IF NOT EXISTS worker_zones (
     UNIQUE KEY unique_worker_zone (worker_id, zone_id)
 );
 
+-- Agents
+CREATE TABLE IF NOT EXISTS agents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    assigned_zone_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_zone_id) REFERENCES zones(id) ON DELETE SET NULL
+);
+
 -- Service requests
 CREATE TABLE IF NOT EXISTS service_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     service_id INT NOT NULL,
     worker_id INT NULL,
-    zone_id INT NOT NULL,
+    area_id INT NOT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
     address TEXT NOT NULL,
+    service_type VARCHAR(100) NOT NULL,
     urgency ENUM('normal', 'urgent', 'emergency') DEFAULT 'normal',
     status ENUM('pending', 'assigned', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-    base_price DECIMAL(10,2) NOT NULL,
-    final_price DECIMAL(10,2) NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL CHECK (base_price >= 0),
+    final_price DECIMAL(10,2) NOT NULL CHECK (final_price >= 0),
     price_breakdown JSON NULL,
     scheduled_at TIMESTAMP NULL,
     started_at TIMESTAMP NULL,
@@ -147,29 +169,55 @@ CREATE TABLE IF NOT EXISTS service_requests (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
     FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE SET NULL,
-    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE CASCADE
+    FOREIGN KEY (area_id) REFERENCES areas(id) ON DELETE CASCADE
 );
 
--- Service reviews and ratings
-CREATE TABLE IF NOT EXISTS service_reviews (
+-- Tasks
+CREATE TABLE IF NOT EXISTS tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agent_id INT NOT NULL,
+    worker_id INT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    status ENUM('assigned', 'in_progress', 'completed') DEFAULT 'assigned',
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+);
+
+-- Task assignments
+CREATE TABLE IF NOT EXISTS task_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    worker_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+);
+
+-- Reviews
+CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     service_request_id INT NOT NULL,
     user_id INT NOT NULL,
     worker_id INT NOT NULL,
-    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    review TEXT,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_review_request (service_request_id)
+    FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
 
--- Dynamic pricing rules
-CREATE TABLE IF NOT EXISTS zone_pricing_rules (
+-- Pricing rules
+CREATE TABLE IF NOT EXISTS pricing_rules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     zone_id INT NOT NULL,
-    price_multiplier DECIMAL(4,2) NOT NULL DEFAULT 1.00,
+    time_start TIME NOT NULL,
+    time_end TIME NOT NULL,
+    multiplier DECIMAL(3,2) CHECK (multiplier >= 0),
     description TEXT,
     status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -198,11 +246,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert default admin user (password: admin123)
-INSERT IGNORE INTO users (username, email, password, role, status) VALUES 
-('admin', 'admin@localservice.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active');
-
--- Insert default categories
+-- Insert default data
 INSERT IGNORE INTO categories (name, description, icon) VALUES 
 ('Electrical', 'Electrical repair and installation services', 'fas fa-bolt'),
 ('Plumbing', 'Plumbing repair and installation services', 'fas fa-wrench'),
@@ -211,7 +255,6 @@ INSERT IGNORE INTO categories (name, description, icon) VALUES
 ('Painting', 'Interior and exterior painting services', 'fas fa-paint-roller'),
 ('Appliance Repair', 'Home appliance repair services', 'fas fa-tools');
 
--- Insert default services
 INSERT IGNORE INTO services (category_id, name, description, base_price, unit) VALUES 
 (1, 'Electrical Wiring', 'Complete electrical wiring for homes and offices', 50.00, 'hour'),
 (1, 'Light Installation', 'Installation of lights and fixtures', 25.00, 'piece'),
@@ -226,7 +269,6 @@ INSERT IGNORE INTO services (category_id, name, description, base_price, unit) V
 (6, 'AC Repair', 'Air conditioner repair and maintenance', 55.00, 'hour'),
 (6, 'Refrigerator Repair', 'Refrigerator repair service', 50.00, 'hour');
 
--- Insert default system settings
 INSERT IGNORE INTO system_settings (setting_key, setting_value, description) VALUES 
 ('site_name', 'Local Service Provider Network', 'Name of the application'),
 ('site_email', 'info@localservice.com', 'Contact email for the site'),

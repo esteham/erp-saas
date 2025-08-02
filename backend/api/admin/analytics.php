@@ -1,233 +1,209 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:5173');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
 require_once '../../config/database.php';
+require_once '../../middleware/auth.php';
+
+// Check if user is authenticated and is admin
+if (!isAuthenticated() || !isAdmin()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit;
+}
 
 try {
-    $pdo = DatabaseConfig::getConnection();
+    $pdo = getDBConnection();
+    $timeRange = $_GET['timeRange'] ?? 'month'; // week, month, quarter, year
     
-    // Get time range parameter
-    $range = $_GET['range'] ?? 'month';
+    // Calculate date range
+    $dateCondition = '';
+    $params = [];
     
-    // Calculate date ranges
-    $now = new DateTime();
-    $currentStart = clone $now;
-    $previousStart = clone $now;
-    $previousEnd = clone $now;
-    
-    switch ($range) {
+    switch ($timeRange) {
         case 'week':
-            $currentStart->modify('-7 days');
-            $previousStart->modify('-14 days');
-            $previousEnd->modify('-7 days');
+            $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)";
+            break;
+        case 'month':
+            $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
             break;
         case 'quarter':
-            $currentStart->modify('-3 months');
-            $previousStart->modify('-6 months');
-            $previousEnd->modify('-3 months');
+            $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)";
             break;
         case 'year':
-            $currentStart->modify('-1 year');
-            $previousStart->modify('-2 years');
-            $previousEnd->modify('-1 year');
-            break;
-        default: // month
-            $currentStart->modify('-1 month');
-            $previousStart->modify('-2 months');
-            $previousEnd->modify('-1 month');
+            $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
             break;
     }
     
-    // Revenue Analytics
-    $revenueQuery = "
-        SELECT 
-            SUM(CASE WHEN created_at >= ? AND created_at <= ? THEN final_price ELSE 0 END) as current_revenue,
-            SUM(CASE WHEN created_at >= ? AND created_at < ? THEN final_price ELSE 0 END) as previous_revenue
-        FROM service_requests 
-        WHERE status = 'completed'
-    ";
+    // Get current period revenue
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(total_price), 0) as current_revenue 
+                          FROM service_requests 
+                          WHERE status = 'completed' $dateCondition");
+    $stmt->execute($params);
+    $currentRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['current_revenue'];
     
-    $stmt = $pdo->prepare($revenueQuery);
-    $stmt->execute([
-        $currentStart->format('Y-m-d H:i:s'),
-        $now->format('Y-m-d H:i:s'),
-        $previousStart->format('Y-m-d H:i:s'),
-        $previousEnd->format('Y-m-d H:i:s')
-    ]);
-    $revenueData = $stmt->fetch();
+    // Get previous period revenue for growth calculation
+    $prevDateCondition = '';
+    switch ($timeRange) {
+        case 'week':
+            $prevDateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 2 WEEK) AND created_at < DATE_SUB(NOW(), INTERVAL 1 WEEK)";
+            break;
+        case 'month':
+            $prevDateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 2 MONTH) AND created_at < DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+            break;
+        case 'quarter':
+            $prevDateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND created_at < DATE_SUB(NOW(), INTERVAL 3 MONTH)";
+            break;
+        case 'year':
+            $prevDateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 2 YEAR) AND created_at < DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+            break;
+    }
     
-    $currentRevenue = (float)($revenueData['current_revenue'] ?? 0);
-    $previousRevenue = (float)($revenueData['previous_revenue'] ?? 0);
-    $revenueGrowth = $previousRevenue > 0 ? (($currentRevenue - $previousRevenue) / $previousRevenue) * 100 : 0;
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(total_price), 0) as prev_revenue 
+                          FROM service_requests 
+                          WHERE status = 'completed' $prevDateCondition");
+    $stmt->execute($params);
+    $prevRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['prev_revenue'];
     
-    // Users Analytics
-    $usersQuery = "
-        SELECT 
-            COUNT(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 END) as current_users,
-            COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) as previous_users
-        FROM users 
-        WHERE role = 'user'
-    ";
+    $revenueGrowth = $prevRevenue > 0 ? (($currentRevenue - $prevRevenue) / $prevRevenue) * 100 : 0;
     
-    $stmt = $pdo->prepare($usersQuery);
-    $stmt->execute([
-        $currentStart->format('Y-m-d H:i:s'),
-        $now->format('Y-m-d H:i:s'),
-        $previousStart->format('Y-m-d H:i:s'),
-        $previousEnd->format('Y-m-d H:i:s')
-    ]);
-    $usersData = $stmt->fetch();
+    // Get current period users
+    $stmt = $pdo->prepare("SELECT COUNT(*) as current_users 
+                          FROM users 
+                          WHERE status = 'active' $dateCondition");
+    $stmt->execute($params);
+    $currentUsers = $stmt->fetch(PDO::FETCH_ASSOC)['current_users'];
     
-    $currentUsers = (int)($usersData['current_users'] ?? 0);
-    $previousUsers = (int)($usersData['previous_users'] ?? 0);
-    $usersGrowth = $previousUsers > 0 ? (($currentUsers - $previousUsers) / $previousUsers) * 100 : 0;
+    // Get previous period users
+    $stmt = $pdo->prepare("SELECT COUNT(*) as prev_users 
+                          FROM users 
+                          WHERE status = 'active' $prevDateCondition");
+    $stmt->execute($params);
+    $prevUsers = $stmt->fetch(PDO::FETCH_ASSOC)['prev_users'];
     
-    // Service Requests Analytics
-    $requestsQuery = "
-        SELECT 
-            COUNT(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 END) as current_requests,
-            COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) as previous_requests
-        FROM service_requests
-    ";
+    $usersGrowth = $prevUsers > 0 ? (($currentUsers - $prevUsers) / $prevUsers) * 100 : 0;
     
-    $stmt = $pdo->prepare($requestsQuery);
-    $stmt->execute([
-        $currentStart->format('Y-m-d H:i:s'),
-        $now->format('Y-m-d H:i:s'),
-        $previousStart->format('Y-m-d H:i:s'),
-        $previousEnd->format('Y-m-d H:i:s')
-    ]);
-    $requestsData = $stmt->fetch();
+    // Get current period requests
+    $stmt = $pdo->prepare("SELECT COUNT(*) as current_requests 
+                          FROM service_requests 
+                          WHERE 1=1 $dateCondition");
+    $stmt->execute($params);
+    $currentRequests = $stmt->fetch(PDO::FETCH_ASSOC)['current_requests'];
     
-    $currentRequests = (int)($requestsData['current_requests'] ?? 0);
-    $previousRequests = (int)($requestsData['previous_requests'] ?? 0);
-    $requestsGrowth = $previousRequests > 0 ? (($currentRequests - $previousRequests) / $previousRequests) * 100 : 0;
+    // Get previous period requests
+    $stmt = $pdo->prepare("SELECT COUNT(*) as prev_requests 
+                          FROM service_requests 
+                          WHERE 1=1 $prevDateCondition");
+    $stmt->execute($params);
+    $prevRequests = $stmt->fetch(PDO::FETCH_ASSOC)['prev_requests'];
     
-    // Workers Analytics
-    $workersQuery = "
-        SELECT 
-            COUNT(CASE WHEN w.created_at >= ? AND w.created_at <= ? THEN 1 END) as current_workers,
-            COUNT(CASE WHEN w.created_at >= ? AND w.created_at < ? THEN 1 END) as previous_workers
-        FROM workers w 
-        JOIN users u ON w.user_id = u.id 
-        WHERE w.status = 'active'
-    ";
+    $requestsGrowth = $prevRequests > 0 ? (($currentRequests - $prevRequests) / $prevRequests) * 100 : 0;
     
-    $stmt = $pdo->prepare($workersQuery);
-    $stmt->execute([
-        $currentStart->format('Y-m-d H:i:s'),
-        $now->format('Y-m-d H:i:s'),
-        $previousStart->format('Y-m-d H:i:s'),
-        $previousEnd->format('Y-m-d H:i:s')
-    ]);
-    $workersData = $stmt->fetch();
+    // Get current period workers
+    $stmt = $pdo->prepare("SELECT COUNT(*) as current_workers 
+                          FROM workers w 
+                          JOIN users u ON w.user_id = u.id 
+                          WHERE w.status = 'active' AND u.status = 'active' $dateCondition");
+    $stmt->execute($params);
+    $currentWorkers = $stmt->fetch(PDO::FETCH_ASSOC)['current_workers'];
     
-    $currentWorkers = (int)($workersData['current_workers'] ?? 0);
-    $previousWorkers = (int)($workersData['previous_workers'] ?? 0);
-    $workersGrowth = $previousWorkers > 0 ? (($currentWorkers - $previousWorkers) / $previousWorkers) * 100 : 0;
+    // Get previous period workers
+    $stmt = $pdo->prepare("SELECT COUNT(*) as prev_workers 
+                          FROM workers w 
+                          JOIN users u ON w.user_id = u.id 
+                          WHERE w.status = 'active' AND u.status = 'active' $prevDateCondition");
+    $stmt->execute($params);
+    $prevWorkers = $stmt->fetch(PDO::FETCH_ASSOC)['prev_workers'];
     
-    // Monthly Revenue Trend (last 6 months)
-    $trendQuery = "
-        SELECT 
-            DATE_FORMAT(created_at, '%Y-%m') as month,
-            SUM(final_price) as revenue
-        FROM service_requests 
-        WHERE status = 'completed' 
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-        ORDER BY month ASC
-    ";
+    $workersGrowth = $prevWorkers > 0 ? (($currentWorkers - $prevWorkers) / $prevWorkers) * 100 : 0;
     
-    $stmt = $pdo->prepare($trendQuery);
-    $stmt->execute();
-    $trendData = $stmt->fetchAll();
+    // Get monthly revenue trend (last 12 months)
+    $stmt = $pdo->query("SELECT 
+                            DATE_FORMAT(created_at, '%Y-%m') as month,
+                            COALESCE(SUM(total_price), 0) as revenue
+                        FROM service_requests 
+                        WHERE status = 'completed' 
+                        AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                        ORDER BY month");
+    $monthlyRevenue = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Top Services
-    $topServicesQuery = "
-        SELECT 
-            s.name,
-            COUNT(sr.id) as requests,
-            SUM(sr.final_price) as revenue
-        FROM services s
-        JOIN service_requests sr ON s.id = sr.service_id
-        WHERE sr.status = 'completed'
-        AND sr.created_at >= ?
-        GROUP BY s.id, s.name
-        ORDER BY revenue DESC
-        LIMIT 5
-    ";
+    // Get top services by revenue
+    $stmt = $pdo->query("SELECT 
+                            s.name as service_name,
+                            COUNT(sr.id) as total_requests,
+                            COALESCE(SUM(sr.total_price), 0) as total_revenue
+                        FROM service_requests sr
+                        JOIN services s ON sr.service_id = s.id
+                        WHERE sr.status = 'completed'
+                        GROUP BY s.id, s.name
+                        ORDER BY total_revenue DESC
+                        LIMIT 10");
+    $topServices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    $stmt = $pdo->prepare($topServicesQuery);
-    $stmt->execute([$currentStart->format('Y-m-d H:i:s')]);
-    $topServices = $stmt->fetchAll();
-    
-    // Top Workers
-    $topWorkersQuery = "
-        SELECT 
-            u.username as name,
-            COUNT(sr.id) as jobs,
-            AVG(sr.final_price) as avg_price,
-            w.rating
-        FROM workers w
-        JOIN users u ON w.user_id = u.id
-        JOIN service_requests sr ON w.id = sr.worker_id
-        WHERE sr.status = 'completed'
-        AND sr.created_at >= ?
-        GROUP BY w.id, u.username, w.rating
-        ORDER BY jobs DESC
-        LIMIT 5
-    ";
-    
-    $stmt = $pdo->prepare($topWorkersQuery);
-    $stmt->execute([$currentStart->format('Y-m-d H:i:s')]);
-    $topWorkers = $stmt->fetchAll();
+    // Get top workers by completed requests
+    $stmt = $pdo->query("SELECT 
+                            CONCAT(u.first_name, ' ', u.last_name) as worker_name,
+                            COUNT(sr.id) as completed_requests,
+                            COALESCE(AVG(r.rating), 0) as avg_rating,
+                            COALESCE(SUM(sr.total_price), 0) as total_revenue
+                        FROM workers w
+                        JOIN users u ON w.user_id = u.id
+                        LEFT JOIN service_requests sr ON w.id = sr.worker_id AND sr.status = 'completed'
+                        LEFT JOIN reviews r ON sr.id = r.service_request_id
+                        WHERE w.status = 'active'
+                        GROUP BY w.id, u.first_name, u.last_name
+                        HAVING completed_requests > 0
+                        ORDER BY completed_requests DESC
+                        LIMIT 10");
+    $topWorkers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Format response
-    $response = [
-        'success' => true,
-        'data' => [
+    $analytics = [
+        'metrics' => [
             'revenue' => [
-                'current' => $currentRevenue,
-                'previous' => $previousRevenue,
-                'growth' => round($revenueGrowth, 1)
+                'current' => (float)$currentRevenue,
+                'growth' => round($revenueGrowth, 2)
             ],
             'users' => [
-                'current' => $currentUsers,
-                'previous' => $previousUsers,
-                'growth' => round($usersGrowth, 1)
+                'current' => (int)$currentUsers,
+                'growth' => round($usersGrowth, 2)
             ],
             'requests' => [
-                'current' => $currentRequests,
-                'previous' => $previousRequests,
-                'growth' => round($requestsGrowth, 1)
+                'current' => (int)$currentRequests,
+                'growth' => round($requestsGrowth, 2)
             ],
             'workers' => [
-                'current' => $currentWorkers,
-                'previous' => $previousWorkers,
-                'growth' => round($workersGrowth, 1)
-            ],
-            'revenue_trend' => $trendData,
-            'top_services' => $topServices,
-            'top_workers' => $topWorkers
-        ]
+                'current' => (int)$currentWorkers,
+                'growth' => round($workersGrowth, 2)
+            ]
+        ],
+        'charts' => [
+            'monthlyRevenue' => $monthlyRevenue,
+            'topServices' => $topServices,
+            'topWorkers' => $topWorkers
+        ],
+        'timeRange' => $timeRange
     ];
     
-    echo json_encode($response);
+    echo json_encode([
+        'success' => true,
+        'data' => $analytics
+    ]);
     
 } catch (Exception $e) {
-    error_log('Analytics API Error: ' . $e->getMessage());
+    error_log("Analytics API Error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Failed to load analytics data',
-        'error' => $e->getMessage()
+        'message' => 'Failed to fetch analytics data'
     ]);
 }
 ?>

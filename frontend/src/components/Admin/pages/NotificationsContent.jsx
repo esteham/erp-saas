@@ -31,12 +31,13 @@ const NotificationsContent = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
       const isReadFilter = filter === 'read' ? '1' : filter === 'unread' ? '0' : '';
-      const response = await axios.get(`${apiUrl}/backend/api/admin/notifications.php?action=list&is_read=${isReadFilter}`, {
+      const filterParam = isReadFilter ? `&is_read=${isReadFilter}` : '';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/notifications.php?limit=50${filterParam}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        const notifications = response.data.data.notifications || [];
+        const notifications = response.data.data || [];
         setNotifications(notifications.map(notification => ({
           id: notification.id,
           type: notification.type,
@@ -44,7 +45,7 @@ const NotificationsContent = () => {
           message: notification.message,
           timestamp: notification.created_at,
           isRead: notification.is_read === 1 || notification.is_read === true,
-          priority: 'medium', // Default priority since not in DB schema
+          priority: notification.priority || 'medium',
           category: notification.type,
           user: notification.user_name
         })));
