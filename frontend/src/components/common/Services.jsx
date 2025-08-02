@@ -168,7 +168,7 @@ const Services = () => {
           </Col>
           <Col lg={6}>
             <img 
-              src="/src/assets/many-different-professions-collage-happy-600nw-2453357543.webp" 
+              src="/src/assets/images/many-different-professions-collage-happy-600nw-2453357543.webp" 
               alt="Our services" 
               className="img-fluid rounded shadow"
             />

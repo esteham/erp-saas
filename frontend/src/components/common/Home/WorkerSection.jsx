@@ -65,7 +65,7 @@ const WorkerSection = () => {
                     style={{ height: '120px' }}
                   >
                     <div className="bg-white rounded-circle p-2 d-inline-block shadow">
-                      <img className="rounded-circle" src="/src/assets/peakpx.jpg"></img>
+                      <img className="rounded-circle" src="/src/assets/images/peakpx.jpg"></img>
                     </div>
                   </div>
                   <Card.Body className="p-4 text-center">

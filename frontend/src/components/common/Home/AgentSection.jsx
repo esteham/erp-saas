@@ -83,7 +83,7 @@ const AgentSection = () => {
               <Card className="border-0 rounded-4 shadow-lg overflow-hidden">
                 <Card.Img 
                   variant="top" 
-                  src="/src/assets/peakpx.jpg" 
+                  src="/src/assets/images/peakpx.jpg" 
                   alt="Service Provider" 
                 />
                 <Card.Body className="bg-dark text-white p-4">

@@ -77,7 +77,7 @@ const About = () => {
           </Col>
           <Col lg={6}>
             <img 
-              src="/src/assets/creative-labor-day-banner-composition_23-2149503647.avif" 
+              src="/src/assets/images/creative-labor-day-banner-composition_23-2149503647.avif" 
               alt="Our team at work" 
               className="img-fluid rounded shadow"
             />
@@ -106,7 +106,7 @@ const About = () => {
           <Col lg={6} className="order-lg-2">
             <div className="position-relative">
               <img 
-                src="/src/assets/maxresdefault.jpg" 
+                src="/src/assets/images/maxresdefault.jpg" 
                 alt="Our story" 
                 className="img-fluid rounded shadow"
               />
@@ -152,25 +152,25 @@ const About = () => {
                 name: "John Smith",
                 role: "Founder & CEO",
                 bio: "Master Technician with 25 years experience",
-                img: "/src/assets/20210527_142533.jpg"
+                img: "/src/assets/images/20210527_142533.jpg"
               },
               {
                 name: "Sarah Johnson",
                 role: "Operations Manager",
                 bio: "10 years in customer service management",
-                img: "/src/assets/IMG-20210128-WA0147.jpg"
+                img: "/src/assets/images/IMG-20210128-WA0147.jpg"
               },
               {
                 name: "Mike Davis",
                 role: "Lead Technician",
                 bio: "Specializes in HVAC systems",
-                img: "/src/assets/IMG_20200131_143230.jpg"
+                img: "/src/assets/images/IMG_20200131_143230.jpg"
               },
               {
                 name: "Emily Wilson",
                 role: "Customer Relations",
                 bio: "Ensures 100% customer satisfaction",
-                img: "/src/assets/received_363411758360649.jpeg"
+                img: "/src/assets/images/received_363411758360649.jpeg"
               }
             ].map((member, index) => (
               <Col key={index} md={6} lg={3}>

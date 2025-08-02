@@ -30,7 +30,7 @@ const Header = () => {
   };
 
   return (
-    <Navbar className="header" variant="dark" expand="lg" sticky="top" style={{ padding: "25px" }}>
+    <Navbar className="header" variant="dark" expand="lg" sticky="top" >
       <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold">
         HyperLocal Services

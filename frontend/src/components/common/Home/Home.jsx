@@ -78,7 +78,7 @@ const Home = () => {
                 transition={{ duration: 0.8 }}
               >
                 <img
-                  src="/src/assets/premium_photo-1661932816149-291a447e3022.jpeg"
+                  src="/src/assets/images/premium_photo-1661932816149-291a447e3022.jpeg"
                   alt="Service Illustration"
                   className="img-fluid rounded-3 shadow-lg"
                   style={{ border: "1px solid rgba(255,255,255,0.1)" }}

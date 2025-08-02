@@ -10,7 +10,7 @@
 .header {
   position: sticky;
   top: 0;
-  padding: 25px;
+  padding: 20px;
   width: 100%;
   background-color: var(--primary-color);
   box-shadow: var(--shadow);
