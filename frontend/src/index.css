@@ -211,3 +211,7 @@ input:focus, textarea:focus, select:focus {
     display: none;
   }
 }
+
+.dashboard-main-content{
+  margin-top: 50px;
+}

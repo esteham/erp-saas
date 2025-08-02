@@ -64,9 +64,16 @@ function App() {
   ];
   const shouldShowFooter = !hiddenFooterRoutes.includes(location.pathname);
 
+  const hiddenHeaderRoutes = [
+    "/AdminDashboard",
+    "/AgentDashboard",
+    "/WorkerDashboard",
+  ];
+  const shouldShowHeader = !hiddenHeaderRoutes.includes(location.pathname);
+
   return (
     <AuthProvider>
-      <Header />
+      {shouldShowHeader && < Header /> }
 
       <Routes>
         {/* Public Routes */}
