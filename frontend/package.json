@@ -25,6 +25,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.7.0",
     "react-select": "^5.10.2",
+    "react-toastify": "^11.0.5",
     "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },
