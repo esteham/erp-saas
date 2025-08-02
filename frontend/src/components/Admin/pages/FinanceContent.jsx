@@ -26,66 +26,57 @@ const FinanceContent = () => {
   const loadFinancialData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}backend/api/admin/finances.php?period=${dateFilter}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      
+      // Load financial overview
+      const overviewResponse = await axios.get(`${apiUrl}/backend/api/admin/finance.php?action=overview`, {
         withCredentials: true
       });
       
-      if (response.data.success) {
-        setFinancialData(response.data.data || {});
-        setTransactions(response.data.transactions || []);
-      } else {
-        // Fallback data for demo
+      // Load transactions
+      const transactionsResponse = await axios.get(`${apiUrl}/backend/api/admin/finance.php?action=transactions&limit=10`, {
+        withCredentials: true
+      });
+      
+      if (overviewResponse.data.success) {
+        const overview = overviewResponse.data.data.overview;
         setFinancialData({
-          totalRevenue: 25420,
-          totalExpenses: 8750,
-          netProfit: 16670,
-          pendingPayments: 3200,
-          completedTransactions: 156,
-          averageOrderValue: 163
+          totalRevenue: overview.revenue.current || 0,
+          totalExpenses: overview.expenses.current || 0,
+          netProfit: overview.profit.current || 0,
+          pendingPayments: overview.revenue.current * 0.15 || 0, // Estimate pending as 15% of revenue
+          completedTransactions: transactionsResponse.data.data?.pagination?.total_items || 0,
+          averageOrderValue: overview.revenue.current / Math.max(1, transactionsResponse.data.data?.pagination?.total_items || 1)
         });
-        
-        setTransactions([
-          {
-            id: 1,
-            type: 'income',
-            amount: 250,
-            description: 'Plumbing Service - John Doe',
-            date: '2024-01-15',
-            status: 'completed',
-            method: 'credit_card'
-          },
-          {
-            id: 2,
-            type: 'income',
-            amount: 180,
-            description: 'Electrical Repair - Jane Smith',
-            date: '2024-01-14',
-            status: 'pending',
-            method: 'bank_transfer'
-          },
-          {
-            id: 3,
-            type: 'expense',
-            amount: 120,
-            description: 'Equipment Purchase',
-            date: '2024-01-13',
-            status: 'completed',
-            method: 'company_card'
-          },
-          {
-            id: 4,
-            type: 'income',
-            amount: 320,
-            description: 'Cleaning Service - ABC Corp',
-            date: '2024-01-12',
-            status: 'completed',
-            method: 'cash'
-          }
-        ]);
       }
+      
+      if (transactionsResponse.data.success) {
+        const transactions = transactionsResponse.data.data.transactions || [];
+        setTransactions(transactions.map(transaction => ({
+          id: transaction.id,
+          type: 'income', // All service requests are income
+          amount: parseFloat(transaction.amount),
+          description: `${transaction.service} - ${transaction.customer}`,
+          date: transaction.created_at?.split(' ')[0] || transaction.created_at,
+          status: transaction.status,
+          method: 'service_payment'
+        })));
+      }
+      
     } catch (error) {
       console.error('Failed to load financial data:', error);
-      toast.error('Failed to load financial data');
+      toast.error('Failed to load financial data. Please check your connection and try again.');
+      
+      // Set empty state instead of dummy data
+      setFinancialData({
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        pendingPayments: 0,
+        completedTransactions: 0,
+        averageOrderValue: 0
+      });
+      setTransactions([]);
     } finally {
       setLoading(false);
     }

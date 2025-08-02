@@ -27,58 +27,37 @@ const AnalyticsContent = () => {
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/backend/api/admin/analytics.php?range=${timeRange}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/analytics.php?range=${timeRange}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        setAnalytics(response.data.data || {});
+        const data = response.data.data;
+        setAnalytics({
+          revenue: data.revenue || { current: 0, previous: 0, growth: 0 },
+          users: data.users || { current: 0, previous: 0, growth: 0 },
+          requests: data.requests || { current: 0, previous: 0, growth: 0 },
+          workers: data.workers || { current: 0, previous: 0, growth: 0 },
+          monthlyRevenue: data.revenue_trend || [],
+          topServices: data.top_services || [],
+          topWorkers: data.top_workers || []
+        });
       } else {
-        throw new Error('API returned error');
+        throw new Error(response.data.message || 'API returned error');
       }
     } catch (error) {
       console.error('Failed to load analytics:', error);
-      // Fallback data for demo
+      toast.error('Failed to load analytics data. Please check your connection and try again.');
+      // Set empty state instead of dummy data
       setAnalytics({
-        revenue: {
-          current: 45600,
-          previous: 38200,
-          growth: 19.4
-        },
-        users: {
-          current: 156,
-          previous: 142,
-          growth: 9.9
-        },
-        requests: {
-          current: 234,
-          previous: 198,
-          growth: 18.2
-        },
-        workers: {
-          current: 45,
-          previous: 41,
-          growth: 9.8
-        },
-        monthlyRevenue: [
-          { month: 'Jan', revenue: 32000 },
-          { month: 'Feb', revenue: 38000 },
-          { month: 'Mar', revenue: 35000 },
-          { month: 'Apr', revenue: 42000 },
-          { month: 'May', revenue: 45600 },
-          { month: 'Jun', revenue: 48000 }
-        ],
-        topServices: [
-          { name: 'Plumbing', requests: 89, revenue: 18500 },
-          { name: 'Cleaning', requests: 67, revenue: 12400 },
-          { name: 'Electrical', requests: 45, revenue: 15600 },
-          { name: 'Gardening', requests: 33, revenue: 8900 }
-        ],
-        topWorkers: [
-          { name: 'Alice Wilson', jobs: 45, rating: 4.8, revenue: 9200 },
-          { name: 'Bob Brown', jobs: 32, rating: 4.6, revenue: 7800 },
-          { name: 'Carol Davis', jobs: 67, rating: 4.9, revenue: 11400 }
-        ]
+        revenue: { current: 0, previous: 0, growth: 0 },
+        users: { current: 0, previous: 0, growth: 0 },
+        requests: { current: 0, previous: 0, growth: 0 },
+        workers: { current: 0, previous: 0, growth: 0 },
+        monthlyRevenue: [],
+        topServices: [],
+        topWorkers: []
       });
     } finally {
       setLoading(false);

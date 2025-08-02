@@ -33,21 +33,22 @@ const SettingsContent = () => {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}backend/api/admin/settings.php`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/settings.php?action=list`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        setSettings(response.data.data || {});
-      } else {
-        // Fallback settings for demo
-        setSettings({
+        const groupedSettings = response.data.data.grouped_settings || {};
+        
+        // Transform the grouped settings to match the expected format
+        const transformedSettings = {
           general: {
-            siteName: 'Local Service Provider',
-            siteDescription: 'Professional home services platform',
-            timezone: 'America/New_York',
-            language: 'en',
-            maintenanceMode: false
+            siteName: getSettingValue(groupedSettings.site, 'site_name', 'Local Service Provider'),
+            siteDescription: getSettingValue(groupedSettings.site, 'site_description', 'Professional home services platform'),
+            timezone: getSettingValue(groupedSettings.default, 'default_timezone', 'America/New_York'),
+            language: getSettingValue(groupedSettings.default, 'default_language', 'en'),
+            maintenanceMode: getSettingValue(groupedSettings.maintenance, 'maintenance_mode', '0') === '1'
           },
           notifications: {
             emailNotifications: true,
@@ -59,42 +60,102 @@ const SettingsContent = () => {
           },
           security: {
             twoFactorAuth: false,
-            sessionTimeout: 30,
+            sessionTimeout: parseInt(getSettingValue(groupedSettings.security, 'security_session_timeout', '30')),
             passwordExpiry: 90,
-            loginAttempts: 5,
+            loginAttempts: parseInt(getSettingValue(groupedSettings.security, 'security_max_login_attempts', '5')),
             ipWhitelist: '',
             sslRequired: true
           },
           email: {
-            smtpHost: 'smtp.gmail.com',
-            smtpPort: 587,
-            smtpUser: '',
-            smtpPassword: '',
-            fromEmail: 'noreply@localservice.com',
-            fromName: 'Local Service Provider'
+            smtpHost: getSettingValue(groupedSettings.email, 'email_smtp_host', 'smtp.gmail.com'),
+            smtpPort: parseInt(getSettingValue(groupedSettings.email, 'email_smtp_port', '587')),
+            smtpUser: getSettingValue(groupedSettings.email, 'email_smtp_username', ''),
+            smtpPassword: getSettingValue(groupedSettings.email, 'email_smtp_password', ''),
+            fromEmail: getSettingValue(groupedSettings.email, 'email_from_address', 'noreply@localservice.com'),
+            fromName: getSettingValue(groupedSettings.email, 'email_from_name', 'Local Service Provider')
           },
           appearance: {
             theme: 'light',
             primaryColor: '#dc2626',
             secondaryColor: '#6b7280',
-            logoUrl: '',
-            faviconUrl: ''
+            logoUrl: getSettingValue(groupedSettings.site, 'site_logo', ''),
+            faviconUrl: getSettingValue(groupedSettings.site, 'site_favicon', '')
           },
           system: {
             backupFrequency: 'daily',
             logLevel: 'info',
             cacheEnabled: true,
             debugMode: false,
-            apiRateLimit: 1000
+            apiRateLimit: parseInt(getSettingValue(groupedSettings.api, 'api_rate_limit', '1000'))
           }
-        });
+        };
+        
+        setSettings(transformedSettings);
+      } else {
+        throw new Error(response.data.message || 'Failed to load settings');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
-      toast.error('Failed to load settings');
+      toast.error('Failed to load settings. Please check your connection and try again.');
+      
+      // Set empty/default settings
+      setSettings({
+        general: {
+          siteName: 'Local Service Provider',
+          siteDescription: 'Professional home services platform',
+          timezone: 'America/New_York',
+          language: 'en',
+          maintenanceMode: false
+        },
+        notifications: {
+          emailNotifications: true,
+          smsNotifications: false,
+          pushNotifications: true,
+          adminAlerts: true,
+          workerUpdates: true,
+          customerConfirmations: true
+        },
+        security: {
+          twoFactorAuth: false,
+          sessionTimeout: 30,
+          passwordExpiry: 90,
+          loginAttempts: 5,
+          ipWhitelist: '',
+          sslRequired: true
+        },
+        email: {
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPassword: '',
+          fromEmail: '',
+          fromName: ''
+        },
+        appearance: {
+          theme: 'light',
+          primaryColor: '#dc2626',
+          secondaryColor: '#6b7280',
+          logoUrl: '',
+          faviconUrl: ''
+        },
+        system: {
+          backupFrequency: 'daily',
+          logLevel: 'info',
+          cacheEnabled: true,
+          debugMode: false,
+          apiRateLimit: 1000
+        }
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to get setting value from grouped settings
+  const getSettingValue = (settingsGroup, key, defaultValue) => {
+    if (!settingsGroup || !Array.isArray(settingsGroup)) return defaultValue;
+    const setting = settingsGroup.find(s => s.setting_key === key);
+    return setting ? setting.setting_value : defaultValue;
   };
 
   const saveSettings = async () => {

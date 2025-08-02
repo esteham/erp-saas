@@ -31,60 +31,31 @@ const MessagesContent = () => {
   const loadMessages = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}backend/api/admin/messages.php?filter=${filter}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/messages.php?action=list&status=${filter === 'all' ? '' : filter}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        setMessages(response.data.data || []);
+        const messages = response.data.data.messages || [];
+        setMessages(messages.map(message => ({
+          id: message.id,
+          from: message.sender_name,
+          fromRole: 'user', // Default role, could be enhanced
+          subject: message.subject,
+          message: message.message,
+          timestamp: message.created_at,
+          isRead: message.status !== 'unread',
+          priority: message.priority,
+          type: message.type
+        })));
       } else {
-        // Fallback data for demo
-        setMessages([
-          {
-            id: 1,
-            from: 'John Smith',
-            fromRole: 'worker',
-            subject: 'Request for Equipment',
-            message: 'Hi Admin, I need new tools for plumbing work. Could you please approve the purchase request?',
-            timestamp: '2024-01-15T10:30:00Z',
-            isRead: false,
-            priority: 'high'
-          },
-          {
-            id: 2,
-            from: 'Sarah Johnson',
-            fromRole: 'agent',
-            subject: 'Worker Assignment Issue',
-            message: 'There seems to be a scheduling conflict with worker Mike for tomorrow\'s appointments.',
-            timestamp: '2024-01-15T09:15:00Z',
-            isRead: true,
-            priority: 'medium'
-          },
-          {
-            id: 3,
-            from: 'Customer Support',
-            fromRole: 'system',
-            subject: 'Customer Complaint',
-            message: 'A customer has filed a complaint about delayed service. Please review case #12345.',
-            timestamp: '2024-01-14T16:45:00Z',
-            isRead: false,
-            priority: 'high'
-          },
-          {
-            id: 4,
-            from: 'Mike Wilson',
-            fromRole: 'worker',
-            subject: 'Schedule Update',
-            message: 'I will be available for extra hours this weekend if needed.',
-            timestamp: '2024-01-14T14:20:00Z',
-            isRead: true,
-            priority: 'low'
-          }
-        ]);
+        throw new Error(response.data.message || 'Failed to load messages');
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
-      toast.error('Failed to load messages');
+      toast.error('Failed to load messages. Please check your connection and try again.');
+      setMessages([]);
     } finally {
       setLoading(false);
     }

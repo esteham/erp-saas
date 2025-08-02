@@ -29,80 +29,32 @@ const NotificationsContent = () => {
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}backend/api/admin/notifications.php?filter=${filter}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost';
+      const isReadFilter = filter === 'read' ? '1' : filter === 'unread' ? '0' : '';
+      const response = await axios.get(`${apiUrl}/backend/api/admin/notifications.php?action=list&is_read=${isReadFilter}`, {
         withCredentials: true
       });
       
       if (response.data.success) {
-        setNotifications(response.data.data || []);
+        const notifications = response.data.data.notifications || [];
+        setNotifications(notifications.map(notification => ({
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          timestamp: notification.created_at,
+          isRead: notification.is_read === 1 || notification.is_read === true,
+          priority: 'medium', // Default priority since not in DB schema
+          category: notification.type,
+          user: notification.user_name
+        })));
       } else {
-        // Fallback data for demo
-        setNotifications([
-          {
-            id: 1,
-            type: 'warning',
-            title: 'Worker Availability Low',
-            message: 'Only 3 workers are currently available. Consider scheduling more workers.',
-            timestamp: '2024-01-15T10:30:00Z',
-            isRead: false,
-            priority: 'high',
-            category: 'system'
-          },
-          {
-            id: 2,
-            type: 'info',
-            title: 'New Service Request',
-            message: 'A new plumbing service request has been submitted by John Doe.',
-            timestamp: '2024-01-15T09:15:00Z',
-            isRead: true,
-            priority: 'medium',
-            category: 'request'
-          },
-          {
-            id: 3,
-            type: 'success',
-            title: 'Payment Received',
-            message: 'Payment of $250 has been received for service request #12345.',
-            timestamp: '2024-01-15T08:45:00Z',
-            isRead: false,
-            priority: 'low',
-            category: 'payment'
-          },
-          {
-            id: 4,
-            type: 'error',
-            title: 'Service Complaint',
-            message: 'A customer has filed a complaint about delayed service delivery.',
-            timestamp: '2024-01-14T16:20:00Z',
-            isRead: false,
-            priority: 'high',
-            category: 'complaint'
-          },
-          {
-            id: 5,
-            type: 'info',
-            title: 'Worker Registration',
-            message: 'New worker Mike Johnson has completed registration and is pending approval.',
-            timestamp: '2024-01-14T14:10:00Z',
-            isRead: true,
-            priority: 'medium',
-            category: 'worker'
-          },
-          {
-            id: 6,
-            type: 'warning',
-            title: 'System Maintenance',
-            message: 'Scheduled system maintenance will occur tonight from 2 AM to 4 AM.',
-            timestamp: '2024-01-14T12:00:00Z',
-            isRead: false,
-            priority: 'medium',
-            category: 'system'
-          }
-        ]);
+        throw new Error(response.data.message || 'Failed to load notifications');
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
-      toast.error('Failed to load notifications');
+      toast.error('Failed to load notifications. Please check your connection and try again.');
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
